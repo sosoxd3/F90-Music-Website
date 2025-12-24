@@ -3,78 +3,95 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>اف تسعين للإنتاج الفني | F90 For Artistic Production</title>
-  <meta name="description" content="كل أغاني قناة F90 تتحدث تلقائيًا من يوتيوب، مع صفحة خاصة لكل أغنية." />
-  <meta name="theme-color" content="#0b0d12">
+  <title>F90 Music | اف تسعين للإنتاج الفني</title>
+  <meta name="theme-color" content="#05070F">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="container header">
-    <div class="brand">
-      <div class="logo">F90</div>
-      <div class="brandText">
-        <div class="title" data-i18n="siteTitleAr">اف تسعين للإنتاج الفني</div>
-        <div class="subtitle" data-i18n="siteTitleEn">F90 For Artistic Production</div>
-      </div>
-    </div>
+  <div class="bgFX"></div>
 
-    <div class="actions">
-      <button id="langBtn" class="btn ghost" type="button">AR / EN</button>
-      <a class="btn" href="https://www.youtube.com/@F90-Music" target="_blank" rel="noopener">YouTube</a>
+  <header class="header">
+    <div class="container">
+      <div class="brand">
+        <div class="logo">F90</div>
+        <div class="brandText">
+          <div class="brandTitle">اف تسعين للإنتاج الفني</div>
+          <div class="brandSub">F90 Music — Official</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a data-nav="index.html" href="index.html">الرئيسية</a>
+        <a data-nav="songs.html" href="songs.html">الأغاني</a>
+      </nav>
+
+      <div class="actions">
+        <a class="btn primary" data-link="youtube" target="_blank" rel="noopener">YouTube</a>
+        <a class="btn" data-link="tiktok" target="_blank" rel="noopener">TikTok</a>
+        <a class="btn" data-link="insta" target="_blank" rel="noopener">Instagram</a>
+      </div>
     </div>
   </header>
 
   <main class="container">
     <section class="hero">
-      <h1 data-i18n="heroH1">كل أغاني القناة — تحديث تلقائي</h1>
-      <p class="muted" data-i18n="heroP">
-        أي فيديو جديد بتنزله على قناتك رح يظهر تلقائيًا هون. اضغط على أي أغنية لفتح صفحتها وتشغيلها.
-      </p>
-    </section>
+      <div class="heroGrid">
+        <div class="heroCard">
+          <div class="heroContent">
+            <div class="pill">F90 • Music</div>
+            <h1>إصدارات موسيقية • تشغيل مباشر • تحديث تلقائي</h1>
+            <p>كل أغنية تنزل على القناة تظهر هنا تلقائيًا، ولكل أغنية صفحة وتشغيل داخل الموقع.</p>
 
-    <section class="section">
-      <div class="sectionHead">
-        <h2 data-i18n="songsTitle">الأغاني</h2>
-        <div class="muted" id="count"></div>
-      </div>
+            <div class="heroBtns">
+              <a class="btn pink" data-link="whatsapp" target="_blank" rel="noopener">WhatsApp لطلب الأغاني</a>
+              <a class="btn ghost" data-link="email">Email</a>
+              <a class="btn primary" href="songs.html">كل الأغاني</a>
+            </div>
 
-      <div class="toolbar">
-        <input id="q" class="input" data-i18n-placeholder="searchPh" placeholder="ابحث باسم الأغنية..." />
-        <select id="order" class="select" aria-label="sort">
-          <option value="date_desc" data-i18n="sortNew">الأحدث أولاً</option>
-          <option value="date_asc" data-i18n="sortOld">الأقدم أولاً</option>
-          <option value="title_asc" data-i18n="sortAZ">العنوان A-Z</option>
-        </select>
-      </div>
+            <div id="status" class="small" style="margin-top:10px"></div>
+          </div>
+        </div>
 
-      <div id="status" class="note"></div>
-      <div id="grid" class="grid"></div>
-    </section>
+        <div class="eqWrap">
+          <div class="eqTop">
+            <div class="pill">Live</div>
+            <div class="pill">© <span id="year"></span> F90</div>
+          </div>
 
-    <section class="section">
-      <div class="sectionHead">
-        <h2 data-i18n="contactTitle">تواصل</h2>
-      </div>
-      <div class="card pad">
-        <p class="muted" data-i18n="contactP">
-          ضع روابطك هنا (Instagram / TikTok / Email). عدّلها بسهولة لاحقًا.
-        </p>
+          <div class="eq" aria-hidden="true">
+            <div class="bar" style="height:30%"></div>
+            <div class="bar" style="height:70%"></div>
+            <div class="bar" style="height:45%"></div>
+            <div class="bar" style="height:85%"></div>
+            <div class="bar" style="height:55%"></div>
+            <div class="bar" style="height:75%"></div>
+          </div>
 
-        <div class="links">
-          <!-- عدّل الروابط -->
-          <a class="chip" href="https://www.youtube.com/@F90-Music" target="_blank" rel="noopener">YouTube</a>
-          <!-- مثال:
-          <a class="chip" href="https://instagram.com/USERNAME" target="_blank" rel="noopener">Instagram</a>
-          <a class="chip" href="mailto:you@example.com">Email</a>
-          -->
+          <div style="margin-top:14px">
+            <div class="pill">Total Tracks: <b id="totalVideos" style="margin-inline-start:6px">-</b></div>
+            <div class="pill" style="margin-top:8px">Latest: <b id="latestDate" style="margin-inline-start:6px">-</b></div>
+          </div>
         </div>
       </div>
     </section>
 
+    <section class="section">
+      <div class="sectionHead">
+        <h2>أحدث الإصدارات</h2>
+        <a class="pill" href="songs.html">عرض الكل</a>
+      </div>
+      <div id="featuredGrid" class="grid"></div>
+    </section>
+
     <footer class="footer">
-      <span>© <span id="year"></span> F90</span>
-      <span class="sep">•</span>
-      <a class="link" href="https://www.youtube.com/@F90-Music" target="_blank" rel="noopener">YouTube</a>
+      <div class="copy">حقوق الطبع والنشر محفوظة © <span id="year"></span> F90</div>
+      <div class="footerLinks">
+        <a data-link="youtube" target="_blank" rel="noopener">YouTube</a>
+        <a data-link="tiktok" target="_blank" rel="noopener">TikTok</a>
+        <a data-link="insta" target="_blank" rel="noopener">Instagram</a>
+        <a data-link="whatsapp" target="_blank" rel="noopener">WhatsApp</a>
+        <a data-link="email">Email</a>
+      </div>
     </footer>
   </main>
 

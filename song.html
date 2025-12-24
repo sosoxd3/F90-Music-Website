@@ -3,73 +3,73 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Track | F90</title>
   <meta name="theme-color" content="#05070F">
-  <link rel="stylesheet" href="styles.css" />
+  <title>الأغنية | F90 Music</title>
+  <link rel="stylesheet" href="styles.css?v=1" />
 </head>
 <body>
-  <div class="bgFX"></div>
 
-  <header class="header">
-    <div class="container">
-      <div class="brand">
+  <header class="topbar">
+    <div class="wrap topbarInner">
+      <a class="brand" href="index.html#/home" aria-label="العودة">
         <div class="logo">F90</div>
-        <div class="brandText">
+        <div class="brandTxt">
           <div class="brandTitle">اف تسعين للإنتاج الفني</div>
-          <div class="brandSub">Now Playing</div>
+          <div class="brandSub">F90 Music — Song</div>
         </div>
-      </div>
+      </a>
 
-      <nav class="nav">
-        <a data-nav="index.html" href="index.html">الرئيسية</a>
-        <a data-nav="songs.html" href="songs.html">الأغاني</a>
-      </nav>
-
-      <div class="actions">
-        <a class="btn ghost" href="songs.html">رجوع</a>
-        <a class="btn primary" id="ytLink" target="_blank" rel="noopener">YouTube</a>
+      <div class="topActions">
+        <a class="btn" href="index.html#/all">كل الأغاني</a>
+        <a class="btn primary" data-link="youtube" target="_blank" rel="noopener">قناة يوتيوب</a>
       </div>
     </div>
   </header>
 
-  <main class="container">
-    <section class="section">
-      <div class="pill">F90</div>
-      <h1 id="title" style="margin:10px 0 6px">...</h1>
-      <p id="meta" class="muted" style="margin:0 0 12px"></p>
-
-      <div class="card">
-        <iframe id="player"
-          title="F90 Player"
-          loading="lazy"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowfullscreen></iframe>
-      </div>
-
-      <div class="card pad" style="margin-top:12px">
-        <div class="pill" style="margin-bottom:10px">طلبات الأغاني</div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <a class="btn pink" data-link="whatsapp" target="_blank" rel="noopener">WhatsApp</a>
-          <a class="btn" data-link="email">Email</a>
-          <a class="btn primary" data-link="insta" target="_blank" rel="noopener">Instagram</a>
+  <main class="wrap songPage">
+    <div class="songCard">
+      <div class="songHead">
+        <div>
+          <div class="pill">الأغنية</div>
+          <h1 class="songTitle" id="songTitle">—</h1>
+          <div class="small" id="songMeta">—</div>
         </div>
-
-        <p id="desc" class="muted" style="white-space:pre-wrap;margin:14px 0 0"></p>
+        <div class="songBtns">
+          <a class="btn primary" id="ytOpen" target="_blank" rel="noopener">فتح على يوتيوب</a>
+          <button class="btn" id="copyLink" type="button">نسخ رابط</button>
+        </div>
       </div>
-    </section>
 
-    <footer class="footer">
-      <div class="copy">حقوق الطبع والنشر محفوظة © <span id="year"></span> F90</div>
-      <div class="footerLinks">
-        <a data-link="youtube" target="_blank" rel="noopener">YouTube</a>
-        <a data-link="tiktok" target="_blank" rel="noopener">TikTok</a>
-        <a data-link="insta" target="_blank" rel="noopener">Instagram</a>
-        <a data-link="whatsapp" target="_blank" rel="noopener">WhatsApp</a>
-        <a data-link="email">Email</a>
+      <div class="playerBox">
+        <iframe id="playerFrame" title="player" allow="autoplay; encrypted-media" allowfullscreen></iframe>
       </div>
-    </footer>
+
+      <div class="songNote small" id="songNote"></div>
+    </div>
   </main>
 
-  <script src="app.js"></script>
+  <!-- Mini Player Bar -->
+  <section class="mini" id="mini">
+    <div class="miniLeft">
+      <div class="miniTitle" id="miniTitle">—</div>
+      <div class="miniMeta" id="miniMeta">—</div>
+    </div>
+
+    <div class="miniBtns">
+      <button class="btn pill" id="prevBtn" type="button" title="السابق">⟵</button>
+      <button class="btn primary pill" id="playBtn" type="button" title="تشغيل/إيقاف">▶</button>
+      <button class="btn pill" id="nextBtn" type="button" title="التالي">⟶</button>
+    </div>
+  </section>
+
+  <script src="app.js?v=1"></script>
+  <script>
+    // page boot for song.html
+    window.addEventListener("load", ()=>{
+      if (window.F90 && typeof window.F90.bootSongPage === "function") {
+        window.F90.bootSongPage();
+      }
+    });
+  </script>
 </body>
 </html>

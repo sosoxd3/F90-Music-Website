@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#05070F">
   <title>اف تسعين للإنتاج الفني | F90 Music</title>
-  <link rel="stylesheet" href="styles.css?v=5" />
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css?v=6" />
 </head>
 <body>
 
@@ -27,6 +29,9 @@
 
       <div class="topActions">
         <button class="btn pill mobileOnly" id="drawerBtn" type="button" aria-label="menu">☰</button>
+
+        <!-- PWA Install -->
+        <button class="btn pill" id="installBtn" type="button" style="display:none">تثبيت</button>
 
         <!-- Phase 1 toggles -->
         <button class="btn pill" id="modeBtn" type="button" title="ليلي/نهاري">نهاري</button>
@@ -61,6 +66,7 @@
     <nav class="sideNav">
       <a href="#/home">الرئيسية</a>
       <a href="#/all">كل الأغاني</a>
+      <a href="#/top">أفضل الأغاني</a>
       <a href="#/rap">الراب</a>
       <a href="#/sad">رومنسي/حزين/طربي</a>
       <a href="#/fav">مفضلتي</a>
@@ -92,6 +98,7 @@
       <nav class="sideNav">
         <a href="#/home">الرئيسية</a>
         <a href="#/all">كل الأغاني</a>
+        <a href="#/top">أفضل الأغاني</a>
         <a href="#/rap">الراب</a>
         <a href="#/sad">رومنسي/حزين/طربي</a>
         <a href="#/fav">مفضلتي</a>
@@ -141,10 +148,11 @@
           <div class="heroProInner">
             <div class="pill">F90 • Music</div>
             <h2 class="heroTitle">أغاني F90 — تشغيل سريع وتصنيف منظم</h2>
-            <p class="heroDesc">راب • رومنسي • حزين • طربي — وكل جديد يظهر تلقائياً.</p>
+            <p class="heroDesc">كل جديد يظهر تلقائياً — وقيّم الأغاني داخل الموقع.</p>
 
             <div class="heroBtns">
               <button class="btn primary" data-navto="#/all" type="button">كل الأغاني</button>
+              <button class="btn" data-navto="#/top" type="button">أفضل الأغاني</button>
               <button class="btn" data-navto="#/rap" type="button">الراب</button>
               <button class="btn" data-navto="#/sad" type="button">رومنسي/حزين/طربي</button>
               <button class="btn pill" data-navto="#/fav" type="button">مفضلتي</button>
@@ -175,9 +183,15 @@
 
         <section class="sectionHead">
           <h3>أحدث الإصدارات</h3>
-          <div class="small">آخر ما نزل على القوائم</div>
+          <div class="small">آخر ما نزل</div>
         </section>
         <section class="row" id="latestRow"></section>
+
+        <section class="sectionHead">
+          <h3>الأعلى تقييماً</h3>
+          <div class="small">حسب تقييم الموقع</div>
+        </section>
+        <section class="row" id="topRow"></section>
       </section>
 
       <!-- Toolbar -->
@@ -227,6 +241,6 @@
     </div>
   </section>
 
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=6"></script>
 </body>
-          </html>
+  </html>

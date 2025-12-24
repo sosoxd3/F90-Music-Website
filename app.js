@@ -1,4 +1,4 @@
-// ===== F90 MUSIC - Arabic Only - Stable Player Across Pages (Prev/Play/Pause/Next) =====
+// ===== F90 MUSIC - Arabic Only - FINAL app.js (Drawer fixed + Stable Player + Prev/Play/Pause/Next) =====
 const YT_API_KEY = "AIzaSyD3mvCx80XsvwrURRg2RwaD8HmOKqhYkek";
 const YT_HANDLE  = "F90-Music";
 
@@ -40,7 +40,7 @@ const state = {
   playerMini:null,
   playerBig:null,
   isPlaying:false,
-  currentListName:"all", // all/rap/sad/live
+  currentListName:"all",
   currentList:[],
   currentIndex:-1,
 };
@@ -118,27 +118,46 @@ async function fetchRSS(channelId){
   }).filter(x=>x.id);
 }
 
-// ---------------- Drawer ----------------
+// ---------------- Drawer (FIXED) ----------------
 function bindDrawer(){
   const drawerBtn = $("drawerBtn");
   const drawer = $("drawer");
   const overlay = $("drawerOverlay");
   const closeBtn = $("closeDrawer");
 
-  function close(){
-    drawer?.classList.remove("open");
-    overlay?.classList.remove("open");
-  }
-  function open(){
-    drawer?.classList.add("open");
-    overlay?.classList.add("open");
-  }
+  if(!drawer || !overlay) return;
 
-  drawerBtn?.addEventListener("click", open);
-  closeBtn?.addEventListener("click", close);
-  overlay?.addEventListener("click", close);
-  drawer?.addEventListener("click", (e)=>{ if(e.target.closest("a")) close(); });
+  const close = ()=>{
+    drawer.classList.remove("open");
+    overlay.classList.remove("open");
+  };
+  const open = ()=>{
+    drawer.classList.add("open");
+    overlay.classList.add("open");
+  };
+
+  drawerBtn?.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); open(); });
+  closeBtn?.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); close(); });
+  overlay.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); close(); });
+
+  // close on any link click in drawer
+  drawer.addEventListener("click", (e)=>{
+    if(e.target.closest("a")) close();
+  });
+
+  // close on hash change
   window.addEventListener("hashchange", close);
+
+  // close on outside click (capture)
+  document.addEventListener("click", (e)=>{
+    if(!drawer.classList.contains("open")) return;
+    if(e.target.closest("#drawer")) return;
+    if(e.target.closest("#drawerBtn")) return;
+    close();
+  }, true);
+
+  // ensure closed after binding
+  close();
 }
 
 // ---------------- UI Render ----------------
@@ -186,41 +205,6 @@ function updateHeader(view){
   setText("viewSubtitle", t[1]);
 }
 
-function route(){
-  const h = location.hash || "#/home";
-  const parts = h.replace("#/","").split("/");
-  const view = parts[0] || "home";
-  const id = parts[1] ? decodeURIComponent(parts[1]) : null;
-
-  updateHeader(view);
-
-  // show/hide sections
-  const hero = $("hero"), toolbar = $("toolbar"), panelSong = $("panelSong");
-  if(hero) hero.style.display = (view==="home") ? "" : "none";
-  if(toolbar) toolbar.style.display = (view==="track") ? "none" : "";
-  if(panelSong) panelSong.classList.toggle("show", view==="track");
-
-  if(view==="home"){ setCurrentList("all"); renderGrid(state.all.slice(0,18)); return; }
-  if(view==="all"){ setCurrentList("all"); renderGrid(state.all); return; }
-  if(view==="rap"){ setCurrentList("rap"); renderGrid(state.rap); return; }
-  if(view==="sad"){ setCurrentList("sad"); renderGrid(state.sad); return; }
-  if(view==="live"){
-    setCurrentList("live");
-    if(state.liveVideoId){
-      // قائمة لايف = عنصر واحد
-      const liveTrack = { id: state.liveVideoId, title:"بث مباشر", publishedAt:new Date().toISOString(), thumb:`https://i.ytimg.com/vi/${state.liveVideoId}/hqdefault.jpg` };
-      renderGrid([liveTrack]);
-    }else{
-      renderGrid([]);
-    }
-    return;
-  }
-  if(view==="track" && id){ openTrack(id, true); return; }
-
-  setCurrentList("all");
-  renderGrid(state.all.slice(0,18));
-}
-
 // ---------------- Search/Sort ----------------
 function applySearchSort(){
   const q = ($("searchInput")?.value || "").trim().toLowerCase();
@@ -239,7 +223,7 @@ function applySearchSort(){
   renderGrid(list);
 }
 
-// ---------------- Stable Player using YouTube IFrame API ----------------
+// ---------------- Stable Player (YouTube IFrame API) ----------------
 function loadYTApi(){
   return new Promise((resolve)=>{
     if(window.YT && window.YT.Player){ resolve(); return; }
@@ -251,7 +235,6 @@ function loadYTApi(){
 }
 
 function createPlayers(){
-  // mini player (hidden but plays across pages)
   state.playerMini = new YT.Player("playerMini", {
     height: "1",
     width: "1",
@@ -260,7 +243,6 @@ function createPlayers(){
     events: {
       onReady: ()=>{ state.ytReady = true; },
       onStateChange: (e)=>{
-        // 1 = playing, 2 = paused, 0 = ended
         state.isPlaying = (e.data === YT.PlayerState.PLAYING);
         updatePlayButton();
         if(e.data === YT.PlayerState.ENDED) playNext();
@@ -268,7 +250,6 @@ function createPlayers(){
     }
   });
 
-  // big player (visual in track page) - separate instance
   state.playerBig = new YT.Player("playerBig", {
     height: "520",
     width: "100%",
@@ -276,7 +257,6 @@ function createPlayers(){
     playerVars: { autoplay: 0, controls: 1, rel: 0, modestbranding: 1, playsinline: 1 },
     events: {
       onStateChange: (e)=>{
-        // sync state
         state.isPlaying = (e.data === YT.PlayerState.PLAYING);
         updatePlayButton();
         if(e.data === YT.PlayerState.ENDED) playNext();
@@ -285,20 +265,23 @@ function createPlayers(){
   });
 }
 
+function updatePlayButton(){
+  const btn = $("playBtn");
+  if(!btn) return;
+  btn.textContent = state.isPlaying ? "⏸" : "▶";
+}
+
 function syncPlayersToVideo(videoId, autoplay){
-  // نحمّل نفس الفيديو في الاثنين لضمان الاستمرارية + صفحة الأغنية تعرضه
   if(!state.playerMini || !state.playerBig) return;
 
-  const opts = { videoId };
   try{
-    state.playerMini.loadVideoById(opts);
-    state.playerBig.loadVideoById(opts);
+    state.playerMini.loadVideoById({ videoId });
+    state.playerBig.loadVideoById({ videoId });
     if(!autoplay){
       state.playerMini.pauseVideo();
       state.playerBig.pauseVideo();
     }
   }catch{
-    // fallback
     state.playerMini.cueVideoById(videoId);
     state.playerBig.cueVideoById(videoId);
   }
@@ -311,37 +294,6 @@ function syncPlayersToVideo(videoId, autoplay){
   }
 }
 
-function updatePlayButton(){
-  const btn = $("playBtn");
-  if(!btn) return;
-  btn.textContent = state.isPlaying ? "⏸" : "▶";
-}
-
-function openTrack(videoId, autoplay){
-  // find track info
-  const t = state.all.find(x=>x.id===videoId) || state.rap.find(x=>x.id===videoId) || state.sad.find(x=>x.id===videoId)
-         || { id: videoId, title:"الأغنية", publishedAt:new Date().toISOString(), thumb:`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` };
-
-  state.now = t;
-
-  // update mini UI
-  setText("miniTitle", t.title);
-  setText("miniMeta", fmtDate(t.publishedAt));
-
-  // update track page UI
-  setText("songTitle", t.title);
-  setText("songMeta", fmtDate(t.publishedAt));
-  const ytBtn = $("ytBtn");
-  if(ytBtn) ytBtn.href = `https://www.youtube.com/watch?v=${encodeURIComponent(t.id)}`;
-
-  // update index inside current list
-  const idx = state.currentList.findIndex(x=>x.id===videoId);
-  if(idx >= 0) state.currentIndex = idx;
-
-  // load into players
-  syncPlayersToVideo(videoId, autoplay);
-}
-
 function setCurrentList(name){
   state.currentListName = name;
 
@@ -351,18 +303,34 @@ function setCurrentList(name){
     state.currentList = state.liveVideoId ? [{ id: state.liveVideoId, title:"بث مباشر", publishedAt:new Date().toISOString(), thumb:`https://i.ytimg.com/vi/${state.liveVideoId}/hqdefault.jpg` }] : [];
   } else state.currentList = state.all.slice();
 
-  // لو في أغنية شغالة: ثبّت المؤشر
   if(state.now){
     const idx = state.currentList.findIndex(x=>x.id===state.now.id);
     state.currentIndex = idx;
   }
 }
 
-// controls
+function openTrack(videoId, autoplay){
+  const t = state.all.find(x=>x.id===videoId) || state.rap.find(x=>x.id===videoId) || state.sad.find(x=>x.id===videoId)
+         || { id: videoId, title:"الأغنية", publishedAt:new Date().toISOString(), thumb:`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` };
+
+  state.now = t;
+  setText("miniTitle", t.title);
+  setText("miniMeta", fmtDate(t.publishedAt));
+  setText("songTitle", t.title);
+  setText("songMeta", fmtDate(t.publishedAt));
+  const ytBtn = $("ytBtn");
+  if(ytBtn) ytBtn.href = `https://www.youtube.com/watch?v=${encodeURIComponent(t.id)}`;
+
+  const idx = state.currentList.findIndex(x=>x.id===videoId);
+  if(idx >= 0) state.currentIndex = idx;
+
+  syncPlayersToVideo(videoId, autoplay);
+}
+
 function playToggle(){
   if(!state.ytReady) return;
+
   if(!state.now){
-    // start from first in current list
     const first = state.currentList[0] || state.all[0];
     if(!first) return;
     state.currentIndex = 0;
@@ -388,11 +356,9 @@ function playNext(){
   const list = state.currentList.length ? state.currentList : state.all;
   if(!list.length) return;
 
-  if(state.currentIndex < 0){
-    state.currentIndex = 0;
-  }else{
-    state.currentIndex = (state.currentIndex + 1) % list.length;
-  }
+  if(state.currentIndex < 0) state.currentIndex = 0;
+  else state.currentIndex = (state.currentIndex + 1) % list.length;
+
   const next = list[state.currentIndex];
   if(next) openTrack(next.id, true);
 }
@@ -401,11 +367,9 @@ function playPrev(){
   const list = state.currentList.length ? state.currentList : state.all;
   if(!list.length) return;
 
-  if(state.currentIndex < 0){
-    state.currentIndex = 0;
-  }else{
-    state.currentIndex = (state.currentIndex - 1 + list.length) % list.length;
-  }
+  if(state.currentIndex < 0) state.currentIndex = 0;
+  else state.currentIndex = (state.currentIndex - 1 + list.length) % list.length;
+
   const prev = list[state.currentIndex];
   if(prev) openTrack(prev.id, true);
 }
@@ -417,6 +381,7 @@ function injectLinks(){
 
 async function bootstrap(){
   showStatus("جاري تحميل الأغاني...");
+
   state.channelId = await getChannelIdFromHandle(YT_HANDLE);
 
   try{
@@ -442,7 +407,6 @@ async function bootstrap(){
     showStatus("");
   }catch(err){
     console.error(err);
-    // fallback RSS
     try{
       const rss = await fetchRSS(state.channelId);
       state.all = rss;
@@ -462,16 +426,57 @@ async function bootstrap(){
     }
   }
 
-  // default list for controls
   setCurrentList("all");
 
-  // route render
   if(!location.hash) location.hash="#/home";
   route();
   applySearchSort();
 }
 
+function route(){
+  const h = location.hash || "#/home";
+  const parts = h.replace("#/","").split("/");
+  const view = parts[0] || "home";
+  const id = parts[1] ? decodeURIComponent(parts[1]) : null;
+
+  updateHeader(view);
+
+  const hero = $("hero"), toolbar = $("toolbar"), panelSong = $("panelSong");
+  if(hero) hero.style.display = (view==="home") ? "" : "none";
+  if(toolbar) toolbar.style.display = (view==="track") ? "none" : "";
+  if(panelSong) panelSong.classList.toggle("show", view==="track");
+
+  if(view==="rap") setCurrentList("rap");
+  else if(view==="sad") setCurrentList("sad");
+  else if(view==="live") setCurrentList("live");
+  else setCurrentList("all");
+
+  if(view==="home"){ renderGrid(state.all.slice(0,18)); return; }
+  if(view==="all"){ renderGrid(state.all); return; }
+  if(view==="rap"){ renderGrid(state.rap); return; }
+  if(view==="sad"){ renderGrid(state.sad); return; }
+  if(view==="live"){
+    if(state.liveVideoId){
+      const liveTrack = { id: state.liveVideoId, title:"بث مباشر", publishedAt:new Date().toISOString(), thumb:`https://i.ytimg.com/vi/${state.liveVideoId}/hqdefault.jpg` };
+      renderGrid([liveTrack]);
+    }else{
+      renderGrid([]);
+    }
+    return;
+  }
+  if(view==="track" && id){
+    openTrack(id, false);
+    return;
+  }
+
+  renderGrid(state.all.slice(0,18));
+}
+
 window.addEventListener("load", async ()=>{
+  // ---- FORCE drawer closed on first paint (fix "opens by itself") ----
+  $("drawer")?.classList.remove("open");
+  $("drawerOverlay")?.classList.remove("open");
+
   // year
   const y = new Date().getFullYear();
   ["year","yearF","yearM"].forEach(id=>{ const el=$(id); if(el) el.textContent = y; });
@@ -514,7 +519,7 @@ window.addEventListener("load", async ()=>{
   $("nextBtn")?.addEventListener("click", (e)=>{ e.stopPropagation(); playNext(); });
   $("playBtn")?.addEventListener("click", (e)=>{ e.stopPropagation(); playToggle(); });
 
-  // clicking mini opens track page (بدون إيقاف)
+  // clicking mini opens track page
   $("mini")?.addEventListener("click", (e)=>{
     if(e.target.closest("button")) return;
     if(state.now) location.hash = `#/track/${encodeURIComponent(state.now.id)}`;
@@ -530,62 +535,7 @@ window.addEventListener("load", async ()=>{
   await loadYTApi();
   createPlayers();
 
-  // bootstrap data
+  // bootstrap
   bootstrap();
 });
-
-function route(){
-  const h = location.hash || "#/home";
-  const parts = h.replace("#/","").split("/");
-  const view = parts[0] || "home";
-  const id = parts[1] ? decodeURIComponent(parts[1]) : null;
-
-  // update view title
-  updateHeader(view);
-
-  // view toggles
-  const hero = $("hero"), toolbar = $("toolbar"), panelSong = $("panelSong");
-  if(hero) hero.style.display = (view==="home") ? "" : "none";
-  if(toolbar) toolbar.style.display = (view==="track") ? "none" : "";
-  if(panelSong) panelSong.classList.toggle("show", view==="track");
-
-  // list switch (affects next/prev)
-  if(view==="rap") setCurrentList("rap");
-  else if(view==="sad") setCurrentList("sad");
-  else if(view==="live") setCurrentList("live");
-  else setCurrentList("all");
-
-  if(view==="home"){ renderGrid(state.all.slice(0,18)); return; }
-  if(view==="all"){ renderGrid(state.all); return; }
-  if(view==="rap"){ renderGrid(state.rap); return; }
-  if(view==="sad"){ renderGrid(state.sad); return; }
-  if(view==="live"){
-    if(state.liveVideoId){
-      const liveTrack = { id: state.liveVideoId, title:"بث مباشر", publishedAt:new Date().toISOString(), thumb:`https://i.ytimg.com/vi/${state.liveVideoId}/hqdefault.jpg` };
-      renderGrid([liveTrack]);
-    }else{
-      renderGrid([]);
-    }
-    return;
-  }
-  if(view==="track" && id){
-    openTrack(id, false); // لا نجبر autoplay عند فتح الصفحة فقط
-    return;
-  }
-
-  renderGrid(state.all.slice(0,18));
-}
-
-function updateHeader(view){
-  const map = {
-    home: ["الرئيسية","أفضل تجربة تشغيل وتصنيف"],
-    all:  ["كل الأغاني","كل إصدارات القناة"],
-    rap:  ["الراب","قائمة الراب"],
-    sad:  ["رومنسي/حزين/طربي","القائمة الثانية"],
-    live: ["لايف","إذا كان هناك بث مباشر"],
-    track:["الأغنية","تشغيل وتحكم كامل"]
-  };
-  const t = map[view] || ["F90","—"];
-  setText("viewTitle", t[0]);
-  setText("viewSubtitle", t[1]);
-}
+```0

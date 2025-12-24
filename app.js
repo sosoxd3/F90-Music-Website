@@ -121,77 +121,86 @@ async function fetchRSS(channelId){
 
 // ---------------- Drawer (FORCE FIX) ----------------
 function bindDrawer(){
-  const drawerBtn = $("drawerBtn");
-  const drawer = $("drawer");
-  const overlay = $("drawerOverlay");
-  const closeBtn = $("closeDrawer");
+  const drawerBtn = document.getElementById("drawerBtn");
+  const drawer = document.getElementById("drawer");
+  const overlay = document.getElementById("drawerOverlay");
+  const closeBtn = document.getElementById("closeDrawer");
 
   if(!drawer || !overlay) return;
 
-  const setClosed = ()=>{
-    drawer.classList.remove("open");
-    overlay.classList.remove("open");
-
-    // RTL drawer on right
-    drawer.style.transform = "translateX(105%)";
-    drawer.style.visibility = "hidden";
-    drawer.style.pointerEvents = "none";
-
-    overlay.style.opacity = "0";
-    overlay.style.pointerEvents = "none";
-  };
-
-  const setOpen = ()=>{
+  // ---- helpers ----
+  const open = ()=>{
     drawer.classList.add("open");
     overlay.classList.add("open");
-
-    drawer.style.transform = "translateX(0)";
-    drawer.style.visibility = "visible";
-    drawer.style.pointerEvents = "auto";
-
-    overlay.style.opacity = "1";
-    overlay.style.pointerEvents = "auto";
+  };
+  const close = ()=>{
+    drawer.classList.remove("open");
+    overlay.classList.remove("open");
   };
 
-  // close immediately (fix open on load)
-  setClosed();
+  // اقفل فوراً عند التحميل (حتى لو كان مفتوح)
+  close();
 
-  drawerBtn?.addEventListener("click", (e)=>{
-    e.preventDefault(); e.stopPropagation();
-    setOpen();
-  }, {capture:true});
+  // امسح أي مستمعين قدام (مهم إذا bindDrawer بينادي أكثر من مرة)
+  drawerBtn?.replaceWith(drawerBtn.cloneNode(true));
+  closeBtn?.replaceWith(closeBtn.cloneNode(true));
 
-  closeBtn?.addEventListener("click", (e)=>{
-    e.preventDefault(); e.stopPropagation();
-    setClosed();
-  }, {capture:true});
+  // أعد التقاط العناصر بعد الاستبدال
+  const drawerBtn2 = document.getElementById("drawerBtn");
+  const closeBtn2  = document.getElementById("closeDrawer");
 
-  overlay.addEventListener("pointerdown", (e)=>{
-    e.preventDefault(); e.stopPropagation();
-    setClosed();
-  }, {capture:true});
-
-  drawer.addEventListener("pointerdown", (e)=>{
-    if(e.target.closest("a")) setClosed();
-  }, {capture:true});
-
-  window.addEventListener("hashchange", ()=>setClosed());
-
-  document.addEventListener("pointerdown", (e)=>{
-    if(drawer.style.visibility !== "visible") return;
-    if(e.target.closest("#drawer")) return;
-    if(e.target.closest("#drawerBtn")) return;
-    setClosed();
-  }, {capture:true});
-
-  document.addEventListener("keydown", (e)=>{
-    if(e.key === "Escape") setClosed();
+  // فتح
+  drawerBtn2?.addEventListener("click", (e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    open();
   });
 
-  // final ensure
-  setClosed();
-}
+  // إغلاق بالزر
+  closeBtn2?.addEventListener("click", (e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    close();
+  });
 
+  // إغلاق بالـ Overlay (المشكلة غالباً هنا)
+  overlay.addEventListener("pointerdown", (e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    close();
+  }, true);
+
+  overlay.addEventListener("click", (e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    close();
+  }, true);
+
+  // إغلاق عند الضغط على أي رابط داخل الدرج
+  drawer.addEventListener("click", (e)=>{
+    if(e.target.closest("a")) close();
+  }, true);
+
+  // إغلاق عند تغيير الصفحة
+  window.addEventListener("hashchange", close);
+
+  // إغلاق عند الضغط خارج الدرج وهو مفتوح
+  document.addEventListener("pointerdown", (e)=>{
+    if(!drawer.classList.contains("open")) return;
+    if(e.target.closest("#drawer")) return;
+    if(e.target.closest("#drawerBtn")) return;
+    close();
+  }, true);
+
+  // إغلاق عند ESC
+  document.addEventListener("keydown", (e)=>{
+    if(e.key === "Escape") close();
+  });
+
+  // ضمان نهائي
+  close();
+}
+```0
 // ---------------- UI Render ----------------
 function renderGrid(list){
   const grid = $("grid");
@@ -562,3 +571,60 @@ window.addEventListener("load", async ()=>{
   bootstrap();
 });
 ```0
+function bindDrawer(){
+  const drawerBtn = document.getElementById("drawerBtn");
+  const drawer = document.getElementById("drawer");
+  const overlay = document.getElementById("drawerOverlay");
+  const closeBtn = document.getElementById("closeDrawer");
+
+  if(!drawer || !overlay) return;
+
+  const open = ()=>{
+    drawer.classList.add("open");
+    overlay.classList.add("open");
+  };
+
+  const close = ()=>{
+    drawer.classList.remove("open");
+    overlay.classList.remove("open");
+  };
+
+  // اقفل فور التحميل
+  close();
+
+  drawerBtn?.addEventListener("click", (e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    open();
+  });
+
+  closeBtn?.addEventListener("click", (e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    close();
+  });
+
+  overlay.addEventListener("click", (e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    close();
+  });
+
+  drawer.addEventListener("click", (e)=>{
+    if(e.target.closest("a")) close();
+  });
+
+  window.addEventListener("hashchange", close);
+
+  document.addEventListener("keydown", (e)=>{
+    if(e.key === "Escape") close();
+  });
+
+  document.addEventListener("click", (e)=>{
+    if(!drawer.classList.contains("open")) return;
+    if(e.target.closest("#drawer")) return;
+    if(e.target.closest("#drawerBtn")) return;
+    close();
+  }, true);
+}
+window.addEventListener("load", bindDrawer);

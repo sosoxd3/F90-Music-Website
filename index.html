@@ -1,17 +1,11 @@
 <!doctype html>
-<html lang="ar" dir="rtl" data-theme="neon" data-mode="dark" data-contrast="normal">
+<html lang="ar" dir="rtl" data-theme="neon" data-mode="night" data-contrast="normal">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#05070F">
   <title>اف تسعين للإنتاج الفني | F90 Music</title>
-
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-
-  <link rel="stylesheet" href="styles.css?v=7" />
+  <link rel="stylesheet" href="styles.css?v=5" />
 </head>
 <body>
 
@@ -34,11 +28,12 @@
       <div class="topActions">
         <button class="btn pill mobileOnly" id="drawerBtn" type="button" aria-label="menu">☰</button>
 
-        <button class="btn pill" id="themeBtn" type="button" title="ثيمات">ألوان</button>
-        <button class="btn pill" id="modeBtn" type="button" title="ليلي/نهاري">وضع</button>
+        <!-- Phase 1 toggles -->
+        <button class="btn pill" id="modeBtn" type="button" title="ليلي/نهاري">نهاري</button>
         <button class="btn pill" id="contrastBtn" type="button" title="تباين عالي">تباين</button>
-        <button class="btn pill" id="motionBtn" type="button" title="حركة">حركة</button>
 
+        <button class="btn pill" id="themeBtn" type="button" title="تغيير اللون">ألوان</button>
+        <button class="btn pill" id="motionBtn" type="button" title="تشغيل/إيقاف الحركة">حركة</button>
         <a class="btn primary" data-link="youtube" target="_blank" rel="noopener">قناة يوتيوب</a>
       </div>
     </div>
@@ -68,7 +63,6 @@
       <a href="#/all">كل الأغاني</a>
       <a href="#/rap">الراب</a>
       <a href="#/sad">رومنسي/حزين/طربي</a>
-      <a href="#/top">الأفضل تقييماً</a>
       <a href="#/fav">مفضلتي</a>
     </nav>
 
@@ -100,7 +94,6 @@
         <a href="#/all">كل الأغاني</a>
         <a href="#/rap">الراب</a>
         <a href="#/sad">رومنسي/حزين/طربي</a>
-        <a href="#/top">الأفضل تقييماً</a>
         <a href="#/fav">مفضلتي</a>
       </nav>
 
@@ -141,20 +134,20 @@
       <!-- زر رجوع داخل الصفحات (مش بالهوم) -->
       <button class="backBtn" id="backBtnIndex" type="button" title="رجوع">⟵ رجوع</button>
 
-      <!-- Home Pro (مطوّر) -->
+      <!-- Home Pro -->
       <section class="homePro" id="homePro">
         <section class="heroPro">
           <div class="heroGlow"></div>
           <div class="heroProInner">
             <div class="pill">F90 • Music</div>
-            <h2 class="heroTitle">أغاني F90 — تجربة موسيقية سريعة ومنظمة</h2>
-            <p class="heroDesc">تشغيل ثابت • ثيمات • مفضلة • أفضل تقييماً • وكل جديد يظهر تلقائياً</p>
+            <h2 class="heroTitle">أغاني F90 — تشغيل سريع وتصنيف منظم</h2>
+            <p class="heroDesc">راب • رومنسي • حزين • طربي — وكل جديد يظهر تلقائياً.</p>
 
             <div class="heroBtns">
               <button class="btn primary" data-navto="#/all" type="button">كل الأغاني</button>
               <button class="btn" data-navto="#/rap" type="button">الراب</button>
               <button class="btn" data-navto="#/sad" type="button">رومنسي/حزين/طربي</button>
-              <button class="btn pill" data-navto="#/top" type="button">الأفضل تقييماً</button>
+              <button class="btn pill" data-navto="#/fav" type="button">مفضلتي</button>
             </div>
 
             <div class="heroStats">
@@ -180,19 +173,11 @@
           </div>
         </section>
 
-        <!-- أحدث الإصدارات (سحب أفقي) -->
         <section class="sectionHead">
           <h3>أحدث الإصدارات</h3>
-          <div class="small">اسحب يمين/يسار</div>
+          <div class="small">آخر ما نزل على القوائم</div>
         </section>
-        <section class="rowScroll" id="latestRow"></section>
-
-        <!-- أعلى تقييماً -->
-        <section class="sectionHead">
-          <h3>الأعلى تقييماً</h3>
-          <div class="small">حسب تقييمات الموقع</div>
-        </section>
-        <section class="rowScroll" id="topRow"></section>
+        <section class="row" id="latestRow"></section>
       </section>
 
       <!-- Toolbar -->
@@ -215,27 +200,33 @@
     </section>
   </main>
 
-  <!-- Mini Player Bar (ثابت) -->
+  <!-- Mini Player Bar -->
   <section class="mini" id="mini">
     <div class="miniLeft">
       <div class="miniTitle" id="miniTitle">—</div>
       <div class="miniMeta" id="miniMeta">—</div>
-      <div class="miniSub">
-        <input class="vol" id="volRange" type="range" min="0" max="100" value="80" />
-        <span class="miniChip" id="modeChip">ليلي</span>
-        <span class="miniChip" id="contrastChip">عادي</span>
+    </div>
+
+    <div class="miniMid">
+      <div class="miniBtns">
+        <button class="btn pill" id="prevBtn" type="button" title="السابق">⟵</button>
+        <button class="btn primary pill" id="playBtn" type="button" title="تشغيل/إيقاف">▶</button>
+        <button class="btn pill" id="nextBtn" type="button" title="التالي">⟶</button>
+      </div>
+      <div class="miniToggles">
+        <button class="btn pill" id="shuffleBtn" type="button" title="Shuffle">🔀</button>
+        <button class="btn pill" id="repeatBtn" type="button" title="Repeat">🔁</button>
       </div>
     </div>
 
-    <div class="miniBtns">
-      <button class="btn pill" id="shuffleBtn" type="button" title="تشغيل عشوائي">🔀</button>
-      <button class="btn pill" id="prevBtn" type="button" title="السابق">⟵</button>
-      <button class="btn primary pill" id="playBtn" type="button" title="تشغيل/إيقاف">▶</button>
-      <button class="btn pill" id="nextBtn" type="button" title="التالي">⟶</button>
-      <button class="btn pill" id="repeatBtn" type="button" title="تكرار">🔁</button>
+    <div class="miniRight">
+      <label class="volWrap" title="الصوت">
+        <span class="volIco">🔊</span>
+        <input id="volRange" class="volRange" type="range" min="0" max="100" step="1" value="70">
+      </label>
     </div>
   </section>
 
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=5"></script>
 </body>
-                </html>
+          </html>

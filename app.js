@@ -1,11 +1,3 @@
-// ===== F90 MUSIC - Arabic Only - FINAL app.js (Drawer FIXED + Stable Player + Prev/Play/Pause/Next) =====
-const YT_API_KEY = "AIzaSyD3mvCx80XsvwrURRg2RwaD8HmOKqhYkek";
-const YT_HANDLE  = "F90-Music";
-
-const PLAYLISTS = {
-  rap: "PL2FIA-SoBgYtotc48ZfKSYagxMd3AMmVp",
-  sad: "PL2FIA-SoBgYvY4B-0IDWTtKriVGPb1qnx",
-};
 "use strict";
 
 // روابطك

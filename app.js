@@ -1,4 +1,4 @@
-// ====== F90 Music - FIXED BUILD (API + RSS FALLBACK + CLEAN UI) ======
+// ====== F90 Music - FINAL (Drawer fix + Simple mini player + API + RSS fallback) ======
 const YT_API_KEY = "AIzaSyD3mvCx80XsvwrURRg2RwaD8HmOKqhYkek";
 const YT_HANDLE  = "F90-Music";
 
@@ -15,28 +15,11 @@ const LINKS = {
   email:   "mailto:f90gimme@gmail.com",
 };
 
-// RSS fallback (works even when API key/referrer fails)
-const RSS_URL = "https://www.youtube.com/feeds/videos.xml?channel_id="; // we will resolve channel_id first
-
-// ---------- helpers ----------
 const $ = (id)=>document.getElementById(id);
 const escapeHtml = (s)=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
 const fmtDate = (iso)=> new Date(iso).toLocaleDateString(undefined, {year:"numeric", month:"short", day:"numeric"});
 const nfmt = (num)=>{ const n=Number(num||0); return n>=1e6?(n/1e6).toFixed(1).replace(/\.0$/,"")+"M":n>=1e3?(n/1e3).toFixed(1).replace(/\.0$/,"")+"K":String(n); };
-function showStatus(msg){ const el=$("homeStatus"); if(el) el.textContent = msg || ""; }
-function setText(id, v){ const el=$(id); if(el) el.textContent = v; }
-function setHrefAll(k, url){ document.querySelectorAll(`[data-link="${k}"]`).forEach(a=>a.href=url); }
-function safeJSONParse(s, fb){ try{return JSON.parse(s)}catch{return fb} }
 
-// ---------- minimal i18n (enough) ----------
-const I18N = {
-  ar: { failed:"فشل تحميل الأغاني. السبب غالبًا مفتاح API أو referrer. سيتم استخدام مصدر بديل.", loading:"جاري تحميل الأغاني...", noItems:"لا يوجد أغاني لعرضها.", views:"مشاهدات", liveNow:"LIVE NOW", noLive:"لا يوجد بث الآن" },
-  en: { failed:"Failed to load videos (API key/referrer). Using fallback source.", loading:"Loading tracks...", noItems:"No tracks to show.", views:"views", liveNow:"LIVE NOW", noLive:"No live now" },
-};
-function lang(){ return (document.documentElement.lang==="en") ? "en":"ar"; }
-function T(){ return I18N[lang()] || I18N.ar; }
-
-// ---------- state ----------
 const state = {
   channelId:null,
   uploadsId:null,
@@ -48,7 +31,17 @@ const state = {
   now:null,
 };
 
-// ---------- YouTube API ----------
+const I18N = {
+  ar: { loading:"جاري تحميل الأغاني...", failed:"فشل تحميل الأغاني (API/Referrer). سيتم استخدام مصدر بديل.", noItems:"لا يوجد أغاني لعرضها.", views:"مشاهدات", liveNow:"LIVE NOW", noLive:"لا يوجد بث الآن" },
+  en: { loading:"Loading tracks...", failed:"Failed to load (API/Referrer). Using fallback.", noItems:"No tracks to show.", views:"views", liveNow:"LIVE NOW", noLive:"No live now" },
+};
+function lang(){ return (document.documentElement.lang==="en") ? "en":"ar"; }
+function T(){ return I18N[lang()] || I18N.ar; }
+function showStatus(msg){ const el=$("homeStatus"); if(el) el.textContent = msg || ""; }
+function setText(id, v){ const el=$(id); if(el) el.textContent = v; }
+function setHrefAll(k, url){ document.querySelectorAll(`[data-link="${k}"]`).forEach(a=>a.href=url); }
+
+// -------- YouTube API --------
 async function ytFetch(url){
   const r = await fetch(url);
   if(!r.ok) throw new Error("YT API error " + r.status);
@@ -84,7 +77,6 @@ async function getAllPlaylistItems(playlistId){
     if(!data.nextPageToken) break;
     pageToken = data.nextPageToken;
   }
-  // dedupe
   const m=new Map(); items.forEach(v=>{ if(!m.has(v.id)) m.set(v.id,v); });
   return Array.from(m.values());
 }
@@ -106,9 +98,9 @@ async function checkLive(channelId){
   return data.items?.[0]?.id?.videoId || null;
 }
 
-// ---------- RSS fallback ----------
+// -------- RSS fallback --------
 async function fetchRSS(channelId){
-  const url = RSS_URL + encodeURIComponent(channelId);
+  const url = `https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(channelId)}`;
   const r = await fetch(url);
   if(!r.ok) throw new Error("RSS error " + r.status);
   const xml = await r.text();
@@ -123,27 +115,23 @@ async function fetchRSS(channelId){
   }).filter(x=>x.id);
 }
 
-// ---------- UI clean (remove duplicated social blocks) ----------
+// -------- Clean UI --------
 function cleanUI(){
-  // hide footer social row text links visually (keep copyright)
+  // hide repeated footer links if exist
   const footLinks = document.querySelector(".footLinks");
   if(footLinks) footLinks.style.display = "none";
-
-  // hide duplicated social buttons inside song panel row (keep WhatsApp/Email in sidebar)
-  const songRow = document.querySelector("#panelSong .row");
-  if(songRow){
-    songRow.querySelectorAll('a.btn').forEach(a=>a.style.display="none");
-  }
 }
 
-// ---------- Render ----------
+// -------- Render --------
 function renderGrid(list){
   const grid = $("grid");
   if(!grid) return;
+
   if(!list.length){
     grid.innerHTML = `<div class="card pad" style="margin:18px"><div class="cardTitle">${escapeHtml(T().noItems)}</div></div>`;
     return;
   }
+
   grid.innerHTML = list.map(t=>{
     const views = state.stats.get(t.id)?.views ?? 0;
     return `
@@ -156,6 +144,7 @@ function renderGrid(list){
       </article>
     `;
   }).join("");
+
   grid.querySelectorAll(".item").forEach(el=>{
     el.addEventListener("click", ()=>{
       const id = el.getAttribute("data-id");
@@ -168,18 +157,70 @@ function trackById(id){
   return state.all.find(x=>x.id===id) || state.rap.find(x=>x.id===id) || state.sad.find(x=>x.id===id) || null;
 }
 
+// -------- rating/comments (local device) --------
+function trackKey(id){ return `f90_track_${id}`; }
+function loadTrackState(id){
+  try{
+    const raw = localStorage.getItem(trackKey(id));
+    return raw ? JSON.parse(raw) : { rating: 0, comments: [] };
+  }catch{ return { rating: 0, comments: [] }; }
+}
+function saveTrackState(id, obj){
+  localStorage.setItem(trackKey(id), JSON.stringify(obj));
+}
+function renderStarsFor(id){
+  const st = loadTrackState(id);
+  $("stars")?.querySelectorAll(".star").forEach((s, i)=>{
+    s.classList.toggle("active", (i+1) <= (st.rating||0));
+  });
+}
+function renderCommentsFor(id){
+  const st = loadTrackState(id);
+  const list = st.comments || [];
+  const wrap = $("commentsList");
+  if(!wrap) return;
+
+  if(!list.length){
+    wrap.innerHTML = `<div class="small">${escapeHtml("لا يوجد تعليقات بعد • محفوظ على جهازك")}</div>`;
+    return;
+  }
+  wrap.innerHTML = list.map(c=>`
+    <div class="listItem">
+      <div>
+        <div class="small">${escapeHtml(c.time||"")}</div>
+        <div>${escapeHtml(c.text||"")}</div>
+      </div>
+      <button class="btn pill" data-del="${escapeHtml(c.id)}">Del</button>
+    </div>
+  `).join("");
+
+  wrap.querySelectorAll("[data-del]").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      const cid = b.getAttribute("data-del");
+      const st2 = loadTrackState(id);
+      st2.comments = (st2.comments||[]).filter(x=>x.id!==cid);
+      saveTrackState(id, st2);
+      renderCommentsFor(id);
+    });
+  });
+}
+function cryptoId(){
+  try{ return crypto.randomUUID(); }catch{ return String(Date.now()) + Math.random().toString(16).slice(2); }
+}
+
+// -------- Track View --------
 function showTrack(id){
   const t = trackById(id);
   if(!t){ renderGrid(state.all.slice(0,24)); return; }
   state.now = t;
 
   $("panelSong")?.classList.add("show");
-  $("panelQueue")?.classList.remove("show");
-  $("hero") && ($("hero").style.display="none");
   $("toolbar") && ($("toolbar").style.display="none");
+  $("hero") && ($("hero").style.display="none");
 
   setText("songTitle", t.title);
   setText("songMeta", fmtDate(t.publishedAt));
+
   const ytBtn = $("ytBtn");
   if(ytBtn) ytBtn.href = `https://www.youtube.com/watch?v=${encodeURIComponent(t.id)}`;
 
@@ -188,6 +229,9 @@ function showTrack(id){
 
   setText("miniTitle", t.title);
   setText("miniMeta", fmtDate(t.publishedAt));
+
+  renderStarsFor(t.id);
+  renderCommentsFor(t.id);
 }
 
 function route(){
@@ -201,10 +245,7 @@ function route(){
   $("toolbar") && ($("toolbar").style.display="");
   $("hero") && ($("hero").style.display= (view==="home") ? "" : "none");
 
-  if(view==="home"){
-    renderGrid(state.all.slice(0, 18));
-    return;
-  }
+  if(view==="home"){ renderGrid(state.all.slice(0, 18)); return; }
   if(view==="all"){ renderGrid(state.all); return; }
   if(view==="rap"){ renderGrid(state.rap); return; }
   if(view==="sad"){ renderGrid(state.sad); return; }
@@ -214,40 +255,93 @@ function route(){
     return;
   }
   if(view==="track" && id){ showTrack(id); return; }
+
   renderGrid(state.all.slice(0, 18));
 }
 
-// ---------- Boot ----------
+// -------- Sorting / searching (simple) --------
+function applySearchSort(){
+  const q = ($("searchInput")?.value || "").trim().toLowerCase();
+  const sort = $("sortSelect")?.value || "date_desc";
+  let list = state.all.slice();
+
+  if(q) list = list.filter(x=>x.title.toLowerCase().includes(q));
+
+  if(sort === "date_desc") list.sort((a,b)=> new Date(b.publishedAt)-new Date(a.publishedAt));
+  if(sort === "date_asc")  list.sort((a,b)=> new Date(a.publishedAt)-new Date(b.publishedAt));
+  if(sort === "title_asc") list.sort((a,b)=> a.title.localeCompare(b.title));
+  if(sort === "views_desc") list.sort((a,b)=> (state.stats.get(b.id)?.views||0) - (state.stats.get(a.id)?.views||0));
+
+  renderGrid(list);
+}
+
+// -------- Drawer Fix (RTL + close on click) --------
+function bindDrawer(){
+  const drawerBtn = $("drawerBtn");
+  const drawer = $("drawer");
+  const overlay = $("drawerOverlay");
+  const closeBtn = $("closeDrawer");
+
+  function openDrawer(){
+    drawer?.classList.add("open");
+    overlay?.classList.add("open");
+  }
+  function closeDrawer(){
+    drawer?.classList.remove("open");
+    overlay?.classList.remove("open");
+  }
+
+  drawerBtn?.addEventListener("click", openDrawer);
+  closeBtn?.addEventListener("click", closeDrawer);
+  overlay?.addEventListener("click", closeDrawer);
+
+  // close when clicking any link inside drawer
+  drawer?.addEventListener("click", (e)=>{
+    if(e.target.closest("a")) closeDrawer();
+  });
+}
+
+// -------- Mini Player Simple (Prev/Next from list) --------
+function playNext(){
+  if(!state.all.length) return;
+  if(!state.now){ location.hash="#/track/"+encodeURIComponent(state.all[0].id); return; }
+  const idx = state.all.findIndex(x=>x.id===state.now.id);
+  const next = state.all[(idx+1) % state.all.length];
+  if(next) location.hash="#/track/"+encodeURIComponent(next.id);
+}
+function playPrev(){
+  if(!state.all.length) return;
+  if(!state.now){ location.hash="#/track/"+encodeURIComponent(state.all[0].id); return; }
+  const idx = state.all.findIndex(x=>x.id===state.now.id);
+  const prev = state.all[(idx-1+state.all.length) % state.all.length];
+  if(prev) location.hash="#/track/"+encodeURIComponent(prev.id);
+}
+
+// -------- Boot --------
 function injectLinks(){
   Object.keys(LINKS).forEach(k=> setHrefAll(k, LINKS[k]));
 }
 
 async function bootstrap(){
-  // expose links and clean UI
-  injectLinks();
   cleanUI();
-
   showStatus(T().loading);
 
-  // Always resolve channelId first (API). If API fails, we still can’t discover channelId via RSS.
-  // But handle discovery usually works even with unrestricted key; if it fails, you must fix referrer.
   state.channelId = await getChannelIdFromHandle(YT_HANDLE);
 
-  // Try full API path:
   try{
     state.uploadsId = await getUploadsPlaylistId(state.channelId);
+
     const [all, rap, sad] = await Promise.all([
       getAllPlaylistItems(state.uploadsId),
       getAllPlaylistItems(PLAYLISTS.rap),
       getAllPlaylistItems(PLAYLISTS.sad),
     ]);
+
     state.all = all.sort((a,b)=> new Date(b.publishedAt)-new Date(a.publishedAt));
     state.rap = rap.sort((a,b)=> new Date(b.publishedAt)-new Date(a.publishedAt));
     state.sad = sad.sort((a,b)=> new Date(b.publishedAt)-new Date(a.publishedAt));
 
-    const stats = await getVideosStats(state.all.map(x=>x.id));
-    state.stats = stats;
-
+    state.stats = await getVideosStats(state.all.map(x=>x.id));
     state.liveVideoId = await checkLive(state.channelId);
 
     setText("totalTracks", String(state.all.length));
@@ -257,13 +351,12 @@ async function bootstrap(){
     showStatus("");
   }catch(err){
     console.error(err);
-
-    // Fallback RSS for listing (no views/live stats)
     try{
       const rssItems = await fetchRSS(state.channelId);
       state.all = rssItems;
-      state.rap = rssItems.filter(()=>false); // keep empty in fallback
-      state.sad = rssItems.filter(()=>false);
+      state.rap = [];
+      state.sad = [];
+      state.stats = new Map();
 
       setText("totalTracks", String(state.all.length));
       setText("latestTrack", state.all[0] ? fmtDate(state.all[0].publishedAt) : "—");
@@ -280,15 +373,26 @@ async function bootstrap(){
   route();
 }
 
-// Events (minimal and guaranteed)
-window.addEventListener("hashchange", route);
-window.addEventListener("load", ()=>{
-  // make refresh button always work
-  const rb = $("refreshBtn");
-  if(rb) rb.addEventListener("click", ()=>bootstrap());
+window.addEventListener("hashchange", ()=>{
+  route();
+});
 
-  const sb = $("shareBtn");
-  if(sb) sb.addEventListener("click", async ()=>{
+window.addEventListener("load", ()=>{
+  // years
+  const y = new Date().getFullYear();
+  ["year","yearF","yearM"].forEach(id=>{ const el=$(id); if(el) el.textContent = y; });
+
+  injectLinks();
+  bindDrawer();
+
+  // nav buttons
+  document.querySelectorAll("[data-navto]").forEach(b=>{
+    b.addEventListener("click", ()=>{ location.hash = b.getAttribute("data-navto"); });
+  });
+
+  // Refresh & Share
+  $("refreshBtn")?.addEventListener("click", ()=>bootstrap());
+  $("shareBtn")?.addEventListener("click", async ()=>{
     const url = location.href;
     try{
       if(navigator.share) await navigator.share({ title:"F90 Music", url });
@@ -296,38 +400,71 @@ window.addEventListener("load", ()=>{
     }catch{}
   });
 
-  // Route buttons
-  document.querySelectorAll("[data-navto]").forEach(b=>{
-    b.addEventListener("click", ()=>{ location.hash = b.getAttribute("data-navto"); });
+  // Search/Sort
+  $("searchInput")?.addEventListener("input", ()=>applySearchSort());
+  $("sortSelect")?.addEventListener("change", ()=>applySearchSort());
+
+  // Mini player simple
+  $("prevBtn")?.addEventListener("click", (e)=>{ e.stopPropagation(); playPrev(); });
+  $("nextBtn")?.addEventListener("click", (e)=>{ e.stopPropagation(); playNext(); });
+  $("playBtn")?.addEventListener("click", (e)=>{
+    e.stopPropagation();
+    if(state.now) location.hash = `#/track/${encodeURIComponent(state.now.id)}`;
+    else location.hash = "#/home";
   });
 
-// ===== Drawer Fix (RTL / Mobile) =====
-  const drawerBtn = document.getElementById("drawerBtn");
-  const drawer = document.getElementById("drawer");
-  const overlay = document.getElementById("drawerOverlay");
-  const closeBtn = document.getElementById("closeDrawer");
+  $("mini")?.addEventListener("click", (e)=>{
+    if(e.target.closest("button")) return;
+    if(state.now) location.hash = `#/track/${encodeURIComponent(state.now.id)}`;
+  });
 
-  function openDrawer(){
-    if(!drawer || !overlay) return;
-    drawer.classList.add("open");
-    overlay.classList.add("open");
-  }
-  function closeDrawer(){
-    if(!drawer || !overlay) return;
-    drawer.classList.remove("open");
-    overlay.classList.remove("open");
-  }
-
-  if(drawerBtn) drawerBtn.addEventListener("click", openDrawer);
-  if(closeBtn) closeBtn.addEventListener("click", closeDrawer);
-  if(overlay) overlay.addEventListener("click", closeDrawer);
-
-  // أهم شيء: أي ضغط على رابط داخل الدرج يقفله
-  if(drawer){
-    drawer.addEventListener("click", (e)=>{
-      const a = e.target.closest("a");
-      if(a) closeDrawer();
+  // Rating
+  $("stars")?.querySelectorAll(".star").forEach((s, idx)=>{
+    s.addEventListener("click", ()=>{
+      if(!state.now) return;
+      const id = state.now.id;
+      const st = loadTrackState(id);
+      st.rating = idx + 1;
+      saveTrackState(id, st);
+      renderStarsFor(id);
     });
-  }
+  });
+
+  // Comments
+  $("addCommentBtn")?.addEventListener("click", ()=>{
+    if(!state.now) return;
+    const id = state.now.id;
+    const txt = ($("commentInput")?.value || "").trim();
+    if(!txt) return;
+    const st = loadTrackState(id);
+    st.comments = st.comments || [];
+    st.comments.unshift({ id: cryptoId(), text: txt, time: new Date().toLocaleString() });
+    saveTrackState(id, st);
+    $("commentInput").value = "";
+    renderCommentsFor(id);
+  });
+
+  // Theme/Motion/Lang (simple)
+  $("themeBtn")?.addEventListener("click", ()=>{
+    const cur = document.documentElement.getAttribute("data-theme") || "neon";
+    const next = (cur==="neon") ? "cyan" : (cur==="cyan") ? "pink" : "neon";
+    document.documentElement.setAttribute("data-theme", next);
+  });
+  $("motionBtn")?.addEventListener("click", ()=>{
+    const cur = document.documentElement.getAttribute("data-motion") || "on";
+    document.documentElement.setAttribute("data-motion", cur==="off" ? "on" : "off");
+  });
+  $("langBtn")?.addEventListener("click", ()=>{
+    const html = document.documentElement;
+    const isEN = html.lang === "en";
+    html.lang = isEN ? "ar" : "en";
+    html.dir  = isEN ? "rtl" : "ltr";
+    // re-route to update text direction safely
+    route();
+  });
+
+  // go home
+  $("goHome")?.addEventListener("click", ()=>location.hash="#/home");
+
   bootstrap();
 });

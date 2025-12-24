@@ -1,18 +1,23 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="neon">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#05070F">
   <title>الأغنية | F90 Music</title>
-  <link rel="stylesheet" href="styles.css?v=1" />
+  <link rel="stylesheet" href="styles.css?v=2" />
 </head>
 <body>
 
+  <div class="bgFX"></div>
+
   <header class="topbar">
     <div class="wrap topbarInner">
-      <a class="brand" href="index.html#/home" aria-label="العودة">
-        <div class="logo">F90</div>
+      <a class="brand" href="index.html#/home">
+        <div class="logoWrap" aria-hidden="true">
+          <div class="logo">F90</div>
+          <div class="headphones"></div>
+        </div>
         <div class="brandTxt">
           <div class="brandTitle">اف تسعين للإنتاج الفني</div>
           <div class="brandSub">F90 Music — Song</div>
@@ -20,11 +25,26 @@
       </a>
 
       <div class="topActions">
-        <a class="btn" href="index.html#/all">كل الأغاني</a>
+        <button class="btn pill" id="themeBtn" type="button">ألوان</button>
+        <button class="btn pill" id="motionBtn" type="button">حركة</button>
         <a class="btn primary" data-link="youtube" target="_blank" rel="noopener">قناة يوتيوب</a>
       </div>
     </div>
   </header>
+
+  <!-- Theme Panel -->
+  <div class="modalOverlay" id="themeOverlay"></div>
+  <section class="modal" id="themeModal" aria-label="الثيمات">
+    <div class="modalHead">
+      <div class="pill">الثيمات (7)</div>
+      <button class="btn pill" id="closeTheme" type="button">✕</button>
+    </div>
+    <div class="themeGrid" id="themeGrid"></div>
+    <div class="small modalHint">يتم حفظ اختيارك تلقائياً.</div>
+  </section>
+
+  <!-- زر رجوع ثابت داخل الصفحة -->
+  <button class="backBtn showAlways" id="backBtnSong" type="button" title="رجوع">⟵ رجوع</button>
 
   <main class="wrap songPage">
     <div class="songCard">
@@ -44,11 +64,39 @@
         <iframe id="playerFrame" title="player" allow="autoplay; encrypted-media" allowfullscreen></iframe>
       </div>
 
+      <!-- تقييم -->
+      <section class="rateCard">
+        <div class="rateHead">
+          <div class="rateTitle">قيّم الأغنية</div>
+          <div class="small" id="rateHint">تقييمك محفوظ على جهازك</div>
+        </div>
+        <div class="stars" id="stars"></div>
+      </section>
+
+      <!-- تعليقات داخل الموقع -->
+      <section class="commentsCard">
+        <div class="commentsHead">
+          <div class="commentsTitle">تعليقات داخل الموقع</div>
+          <div class="small" id="cmCount">—</div>
+        </div>
+
+        <form class="cmForm" id="cmForm">
+          <input class="input" id="cmName" placeholder="اسمك (اختياري)" maxlength="30" />
+          <textarea class="textarea" id="cmText" placeholder="اكتب تعليقك هنا..." maxlength="300"></textarea>
+          <div class="cmActions">
+            <button class="btn primary" type="submit">نشر</button>
+            <button class="btn" id="cmClear" type="button">مسح الكل</button>
+          </div>
+          <div class="small" id="cmStatus"></div>
+        </form>
+
+        <div class="cmList" id="cmList"></div>
+      </section>
+
       <div class="songNote small" id="songNote"></div>
     </div>
   </main>
 
-  <!-- Mini Player Bar -->
   <section class="mini" id="mini">
     <div class="miniLeft">
       <div class="miniTitle" id="miniTitle">—</div>
@@ -62,9 +110,8 @@
     </div>
   </section>
 
-  <script src="app.js?v=1"></script>
+  <script src="app.js?v=2"></script>
   <script>
-    // page boot for song.html
     window.addEventListener("load", ()=>{
       if (window.F90 && typeof window.F90.bootSongPage === "function") {
         window.F90.bootSongPage();

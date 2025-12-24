@@ -279,26 +279,3 @@ async function bootstrap(){
   if(!location.hash) location.hash="#/home";
   route();
 }
-
-// Events (minimal and guaranteed)
-window.addEventListener("hashchange", ()=>{ $("drawer")?.classList.remove("open"); $("drawerOverlay")?.classList.remove("open"); });
-  // make refresh button always work
-  const rb = $("refreshBtn");
-  if(rb) rb.addEventListener("click", ()=>bootstrap());
-
-  const sb = $("shareBtn");
-  if(sb) sb.addEventListener("click", async ()=>{
-    const url = location.href;
-    try{
-      if(navigator.share) await navigator.share({ title:"F90 Music", url });
-      else { await navigator.clipboard.writeText(url); alert("Copied"); }
-    }catch{}
-  });
-
-  // Route buttons
-  document.querySelectorAll("[data-navto]").forEach(b=>{
-    b.addEventListener("click", ()=>{ location.hash = b.getAttribute("data-navto"); });
-  });
-
-  bootstrap();
-});

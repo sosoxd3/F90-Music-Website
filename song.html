@@ -133,4 +133,103 @@
     });
   </script>
 </body>
+</html>      <div>
+        <div class="pill">الأغنية</div>
+        <h1 class="songTitle" id="songTitle">—</h1>
+        <div class="small" id="songMeta">—</div>
+        <div class="small" id="resumeHint"></div>
+      </div>
+
+      <div class="songActions">
+        <button class="btn" id="backBtnSong" type="button">رجوع</button>
+        <button class="btn" id="copyLink" type="button">نسخ الرابط</button>
+        <a class="btn" id="waShare" target="_blank" rel="noopener">مشاركة واتساب</a>
+        <button class="btn primary" id="favBtn" type="button">⭐ إضافة للمفضلة</button>
+      </div>
+    </div>
+
+    <section class="playerPanel">
+      <div class="playerBox">
+        <div id="ytPlayer"></div>
+      </div>
+
+      <div class="songNote small" id="songNote"></div>
+
+      <div class="playerControls">
+        <button class="btn pill" id="shuffleBtn" type="button" title="Shuffle">Shuffle</button>
+        <button class="btn pill" id="repeatBtn" type="button" title="Repeat">Repeat</button>
+
+        <div class="volBox">
+          <div class="small">الصوت</div>
+          <input id="volRange" class="volRange" type="range" min="0" max="100" value="70">
+        </div>
+
+        <div class="miniBtns">
+          <button class="btn pill" id="prevBtn" type="button">⟵</button>
+          <button class="btn primary pill" id="playBtn" type="button">▶</button>
+          <button class="btn pill" id="nextBtn" type="button">⟶</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="ratePanel">
+      <div class="panelTitleRow">
+        <div class="pill">التقييم</div>
+        <div class="small" id="rateHint"></div>
+      </div>
+      <div class="stars" id="stars"></div>
+    </section>
+
+    <section class="cmPanel">
+      <div class="panelTitleRow">
+        <div class="pill">تعليقات الموقع</div>
+        <div class="small" id="cmCount">0 تعليق</div>
+      </div>
+
+      <form class="cmForm" id="cmForm">
+        <input class="input" id="cmName" placeholder="اسمك (اختياري)" maxlength="30" />
+        <textarea class="input cmText" id="cmText" placeholder="اكتب تعليقك هنا..." maxlength="300"></textarea>
+        <div class="cmBtns">
+          <button class="btn primary" type="submit">نشر</button>
+          <button class="btn" id="cmClear" type="button">مسح الكل</button>
+          <div class="small" id="cmStatus"></div>
+        </div>
+      </form>
+
+      <div class="cmList" id="cmList"></div>
+    </section>
+
+    <section class="suggestPanel">
+      <div class="panelTitleRow">
+        <div class="pill">مقترحات</div>
+        <div class="small" id="suggestHint">—</div>
+      </div>
+      <div class="suggestGrid" id="suggestGrid"></div>
+    </section>
+
+    <footer class="foot">
+      <div class="small">حقوق الطبع والنشر محفوظة © <span id="yearF"></span> F90</div>
+    </footer>
+  </main>
+
+  <!-- Theme Modal -->
+  <div class="themeOverlay" id="themeOverlay"></div>
+  <div class="themeModal" id="themeModal" role="dialog" aria-modal="true" aria-label="الثيمات">
+    <div class="themeHead">
+      <div class="pill">الثيمات</div>
+      <button class="btn pill" id="closeTheme" type="button">✕</button>
+    </div>
+    <div class="themeGrid" id="themeGrid"></div>
+    <div class="small themeHint">اختر ثيم من 7 ثيمات. يتم الحفظ تلقائياً.</div>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    window.addEventListener("load", ()=>{
+      if(window.F90 && typeof window.F90.bootSongPage === "function"){
+        window.F90.bootSongPage();
+      }
+    });
+  </script>
+</body>
 </html>

@@ -1,16 +1,11 @@
 <!doctype html>
-<html lang="ar" dir="rtl" data-theme="neon" data-mode="dark" data-contrast="normal">
+<html lang="ar" dir="rtl" data-theme="neon" data-mode="night" data-contrast="normal">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#05070F">
   <title>الأغنية | F90 Music</title>
-
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
-
-  <link rel="stylesheet" href="styles.css?v=7" />
+  <link rel="stylesheet" href="styles.css?v=5" />
 </head>
 <body>
 
@@ -30,9 +25,11 @@
       </a>
 
       <div class="topActions">
+        <!-- Phase 1 toggles -->
+        <button class="btn pill" id="modeBtn" type="button" title="ليلي/نهاري">نهاري</button>
+        <button class="btn pill" id="contrastBtn" type="button" title="تباين عالي">تباين</button>
+
         <button class="btn pill" id="themeBtn" type="button">ألوان</button>
-        <button class="btn pill" id="modeBtn" type="button">وضع</button>
-        <button class="btn pill" id="contrastBtn" type="button">تباين</button>
         <button class="btn pill" id="motionBtn" type="button">حركة</button>
         <a class="btn primary" data-link="youtube" target="_blank" rel="noopener">قناة يوتيوب</a>
       </div>
@@ -50,6 +47,7 @@
     <div class="small modalHint">يتم حفظ اختيارك تلقائياً.</div>
   </section>
 
+  <!-- زر رجوع ثابت داخل الصفحة -->
   <button class="backBtn showAlways" id="backBtnSong" type="button" title="رجوع">⟵ رجوع</button>
 
   <main class="wrap songPage">
@@ -69,11 +67,14 @@
       </div>
 
       <div class="playerBox">
-        <!-- IFrame API target -->
-        <div id="ytPlayer"></div>
+        <!-- بدل iframe: YouTube IFrame API Player -->
+        <div class="ytBox">
+          <div id="ytPlayer"></div>
+        </div>
         <div class="small" id="resumeHint"></div>
       </div>
 
+      <!-- تقييم -->
       <section class="rateCard">
         <div class="rateHead">
           <div class="rateTitle">قيّم الأغنية</div>
@@ -82,6 +83,7 @@
         <div class="stars" id="stars"></div>
       </section>
 
+      <!-- تعليقات داخل الموقع -->
       <section class="commentsCard">
         <div class="commentsHead">
           <div class="commentsTitle">تعليقات داخل الموقع</div>
@@ -101,10 +103,11 @@
         <div class="cmList" id="cmList"></div>
       </section>
 
+      <!-- مقترحات -->
       <section class="suggestCard">
         <div class="suggestHead">
           <div class="suggestTitle">أغاني مقترحة</div>
-          <div class="small" id="suggestHint">—</div>
+          <div class="small" id="suggestHint">من نفس التصنيف</div>
         </div>
         <div class="suggestGrid" id="suggestGrid"></div>
       </section>
@@ -113,27 +116,34 @@
     </div>
   </main>
 
+  <!-- Mini Bar (controls real player) -->
   <section class="mini" id="mini">
     <div class="miniLeft">
       <div class="miniTitle" id="miniTitle">—</div>
       <div class="miniMeta" id="miniMeta">—</div>
-      <div class="miniSub">
-        <input class="vol" id="volRange" type="range" min="0" max="100" value="80" />
-        <span class="miniChip" id="modeChip">ليلي</span>
-        <span class="miniChip" id="contrastChip">عادي</span>
+    </div>
+
+    <div class="miniMid">
+      <div class="miniBtns">
+        <button class="btn pill" id="prevBtn" type="button" title="السابق">⟵</button>
+        <button class="btn primary pill" id="playBtn" type="button" title="تشغيل/إيقاف">▶</button>
+        <button class="btn pill" id="nextBtn" type="button" title="التالي">⟶</button>
+      </div>
+      <div class="miniToggles">
+        <button class="btn pill" id="shuffleBtn" type="button" title="Shuffle">🔀</button>
+        <button class="btn pill" id="repeatBtn" type="button" title="Repeat">🔁</button>
       </div>
     </div>
 
-    <div class="miniBtns">
-      <button class="btn pill" id="shuffleBtn" type="button" title="تشغيل عشوائي">🔀</button>
-      <button class="btn pill" id="prevBtn" type="button" title="السابق">⟵</button>
-      <button class="btn primary pill" id="playBtn" type="button" title="تشغيل/إيقاف">▶</button>
-      <button class="btn pill" id="nextBtn" type="button" title="التالي">⟶</button>
-      <button class="btn pill" id="repeatBtn" type="button" title="تكرار">🔁</button>
+    <div class="miniRight">
+      <label class="volWrap" title="الصوت">
+        <span class="volIco">🔊</span>
+        <input id="volRange" class="volRange" type="range" min="0" max="100" step="1" value="70">
+      </label>
     </div>
   </section>
 
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=5"></script>
   <script>
     window.addEventListener("load", ()=>{
       if (window.F90 && typeof window.F90.bootSongPage === "function") {

@@ -42,10 +42,15 @@ function injectLinks(){
 }
 
 /* ========= تخزين ========= */
-const STORE_KEY  = "f90_player_state_v3";
-const THEME_KEY  = "f90_theme_v1";
-const MOTION_KEY = "f90_motion_v1";
-const FAV_KEY    = "f90_favs_v1";
+const STORE_KEY   = "f90_player_state_v4";    // nowId + list context
+const THEME_KEY   = "f90_theme_v1";
+const MOTION_KEY  = "f90_motion_v1";
+const FAV_KEY     = "f90_favs_v1";
+const MODE_KEY    = "f90_mode_v1";            // night/day
+const CONTRAST_KEY= "f90_contrast_v1";        // normal/high
+const VOLUME_KEY  = "f90_volume_v1";          // 0-100
+const SHUFFLE_KEY = "f90_shuffle_v1";         // 0/1
+const REPEAT_KEY  = "f90_repeat_v1";          // 0/1
 
 function savePlayerState(obj){
   try{ localStorage.setItem(STORE_KEY, JSON.stringify(obj)); }catch{}
@@ -67,6 +72,35 @@ function setMotion(v){
   try{ localStorage.setItem(MOTION_KEY, val); }catch{}
 }
 
+/* Phase 1: Mode/Contrast */
+function getMode(){ return localStorage.getItem(MODE_KEY) || "night"; }
+function setMode(v){
+  const val = (v==="day") ? "day" : "night";
+  document.documentElement.setAttribute("data-mode", val);
+  try{ localStorage.setItem(MODE_KEY, val); }catch{}
+}
+function getContrast(){ return localStorage.getItem(CONTRAST_KEY) || "normal"; }
+function setContrast(v){
+  const val = (v==="high") ? "high" : "normal";
+  document.documentElement.setAttribute("data-contrast", val);
+  try{ localStorage.setItem(CONTRAST_KEY, val); }catch{}
+}
+
+/* Phase 1: Volume + Shuffle + Repeat */
+function getVolume(){
+  const n = Number(localStorage.getItem(VOLUME_KEY) ?? 70);
+  return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 70;
+}
+function setVolume(v){
+  const n = Math.max(0, Math.min(100, Number(v)||0));
+  try{ localStorage.setItem(VOLUME_KEY, String(n)); }catch{}
+  return n;
+}
+function getShuffle(){ return (localStorage.getItem(SHUFFLE_KEY) || "0") === "1"; }
+function setShuffle(on){ try{ localStorage.setItem(SHUFFLE_KEY, on ? "1":"0"); }catch{} }
+function getRepeat(){ return (localStorage.getItem(REPEAT_KEY) || "0") === "1"; }
+function setRepeat(on){ try{ localStorage.setItem(REPEAT_KEY, on ? "1":"0"); }catch{} }
+
 /* ========= Favorites ========= */
 function loadFavs(){
   try{
@@ -86,7 +120,6 @@ function toggleFav(id){
   const i = arr.indexOf(id);
   if(i >= 0) arr.splice(i,1);
   else arr.unshift(id);
-  // إزالة التكرار
   const uniq = Array.from(new Set(arr)).slice(0, 500);
   saveFavs(uniq);
   return uniq.includes(id);
@@ -102,12 +135,9 @@ function setRating(videoId, val){
   try{ localStorage.setItem(ratingKey(videoId), String(v)); }catch{}
 }
 function computeTopRatedText(all){
-  let best = { rate:0 };
-  (all||[]).forEach(t=>{
-    const r = getRating(t.id);
-    if(r > best.rate) best = { rate:r };
-  });
-  return best.rate ? `${best.rate}/5` : "—";
+  let best = 0;
+  (all||[]).forEach(t=>{ best = Math.max(best, getRating(t.id)); });
+  return best ? `${best}/5` : "—";
 }
 
 /* ========= Comments (local) ========= */
@@ -122,6 +152,16 @@ function saveComments(videoId, arr){
   try{ localStorage.setItem(commentsKey(videoId), JSON.stringify(arr)); }catch{}
 }
 
+/* ========= Resume time (local per video) ========= */
+function resumeKey(videoId){ return `f90_resume_${videoId}`; }
+function getResume(videoId){
+  try{ return Number(localStorage.getItem(resumeKey(videoId)) || 0); }catch{ return 0; }
+}
+function setResume(videoId, seconds){
+  const s = Math.max(0, Number(seconds)||0);
+  try{ localStorage.setItem(resumeKey(videoId), String(s)); }catch{}
+}
+
 /* ========= بيانات ========= */
 const state = {
   rap: [],
@@ -130,6 +170,15 @@ const state = {
   currentListName: "all",
   currentList: [],
   currentIndex: -1,
+  lastRenderedIds: [],
+
+  // Song page player state
+  ytReady:false,
+  ytPlayer:null,
+  nowId:"",
+  nowTitle:"",
+  nowDate:"",
+  saveTimer:null,
 };
 
 /* ========= YouTube API ========= */
@@ -249,6 +298,62 @@ function bindThemeUI(){
   });
 }
 
+/* ========= Phase 1: Mode/Contrast UI ========= */
+function refreshModeButtons(){
+  const mode = document.documentElement.getAttribute("data-mode") || "night";
+  const contrast = document.documentElement.getAttribute("data-contrast") || "normal";
+
+  const modeBtn = $("modeBtn");
+  const contrastBtn = $("contrastBtn");
+
+  if(modeBtn){
+    modeBtn.textContent = (mode === "day") ? "ليلي" : "نهاري";
+    modeBtn.classList.toggle("on", mode === "day");
+  }
+  if(contrastBtn){
+    contrastBtn.textContent = (contrast === "high") ? "عادي" : "تباين";
+    contrastBtn.classList.toggle("on", contrast === "high");
+  }
+}
+function bindModeContrast(){
+  $("modeBtn")?.addEventListener("click", ()=>{
+    const cur = getMode();
+    setMode(cur === "day" ? "night" : "day");
+    refreshModeButtons();
+  });
+  $("contrastBtn")?.addEventListener("click", ()=>{
+    const cur = getContrast();
+    setContrast(cur === "high" ? "normal" : "high");
+    refreshModeButtons();
+  });
+}
+
+/* ========= Phase 1: Shuffle/Repeat/Volume UI ========= */
+function refreshSRVButtons(){
+  const sh = getShuffle();
+  const rp = getRepeat();
+  $("shuffleBtn")?.classList.toggle("on", sh);
+  $("repeatBtn")?.classList.toggle("on", rp);
+
+  const vr = $("volRange");
+  if(vr) vr.value = String(getVolume());
+}
+function bindSRVControls(onChangeVolume){
+  $("shuffleBtn")?.addEventListener("click", ()=>{
+    setShuffle(!getShuffle());
+    refreshSRVButtons();
+  });
+  $("repeatBtn")?.addEventListener("click", ()=>{
+    setRepeat(!getRepeat());
+    refreshSRVButtons();
+  });
+  $("volRange")?.addEventListener("input", (e)=>{
+    const v = setVolume(e.target.value);
+    refreshSRVButtons();
+    if(typeof onChangeVolume === "function") onChangeVolume(v);
+  });
+}
+
 /* ========= Index UI ========= */
 function updateHeader(view){
   const map = {
@@ -264,16 +369,25 @@ function updateHeader(view){
 }
 
 function openSongFromIndex(id){
+  // نخزن سياق القائمة + ترتيب العرض + موقع الأغنية داخلها
+  const listIds = state.lastRenderedIds.length ? state.lastRenderedIds.slice() : state.currentList.map(x=>x.id);
+  const idx = listIds.indexOf(id);
+
   savePlayerState({
     currentListName: state.currentListName,
     nowId: id,
+    listIds,
+    index: idx >= 0 ? idx : 0
   });
+
   window.location.href = `song.html?v=${encodeURIComponent(id)}&autoplay=1`;
 }
 
 function renderGrid(list){
   const grid = $("grid");
   if(!grid) return;
+
+  state.lastRenderedIds = list.map(x=>x.id);
 
   if(!list.length){
     grid.innerHTML = `<div class="sideCard" style="margin:18px"><div class="sideCardTitle">لا يوجد أغاني لعرضها</div></div>`;
@@ -321,6 +435,10 @@ function renderLatestRow(){
   row.querySelectorAll(".rowCard").forEach(el=>{
     el.addEventListener("click", ()=>{
       const id = el.getAttribute("data-id");
+      // latestRow يفتح ضمن all
+      state.currentListName = "all";
+      state.currentList = state.all.slice();
+      state.lastRenderedIds = state.all.map(x=>x.id);
       openSongFromIndex(id);
     });
   });
@@ -332,7 +450,6 @@ function setCurrentList(name){
   else if(name==="sad") state.currentList = state.sad.slice();
   else if(name==="fav"){
     const favs = loadFavs();
-    // fav list uses state.all data for details
     const map = new Map(state.all.map(x=>[x.id,x]));
     state.currentList = favs.map(id=>map.get(id)).filter(Boolean);
   } else state.currentList = state.all.slice();
@@ -375,6 +492,7 @@ function routeIndex(){
   if(view==="rap") setCurrentList("rap");
   else if(view==="sad") setCurrentList("sad");
   else if(view==="fav") setCurrentList("fav");
+  else if(view==="all") setCurrentList("all");
   else setCurrentList("all");
 
   if(view==="home"){
@@ -435,7 +553,7 @@ async function bootstrapIndex(){
   }
 }
 
-/* ========= Song Page ========= */
+/* ========= Song Page (YouTube IFrame API) ========= */
 function parseQuery(){
   const p = new URLSearchParams(location.search);
   return { id: p.get("v") || "", autoplay: p.get("autoplay")==="1" };
@@ -507,7 +625,7 @@ function setFavButton(videoId){
   const btn = $("favBtn");
   if(!btn) return;
   const on = isFav(videoId);
-  btn.classList.toggle("favOn", on);
+  btn.classList.toggle("on", on);
   btn.textContent = on ? "⭐ إزالة من المفضلة" : "⭐ إضافة للمفضلة";
 }
 
@@ -519,14 +637,30 @@ function buildWhatsAppShare(videoId, title){
   if(a) a.href = wa;
 }
 
-/* ---- Suggestions ---- */
-function pickSuggestions(all, currentId, category){
-  const pool = category === "rap" ? all.rap
-             : category === "sad" ? all.sad
-             : all.all;
-  const filtered = pool.filter(x=>x.id !== currentId);
-  // خذ أحدث 6
-  return filtered.slice(0, 6);
+async function loadAllForSongPage(){
+  const [rap, sad] = await Promise.all([
+    getAllPlaylistItems(PLAYLISTS.rap),
+    getAllPlaylistItems(PLAYLISTS.sad),
+  ]);
+  const rapS = rap.sort((a,b)=> new Date(b.publishedAt)-new Date(a.publishedAt));
+  const sadS = sad.sort((a,b)=> new Date(b.publishedAt)-new Date(a.publishedAt));
+  const m = new Map();
+  [...rapS, ...sadS].forEach(v=>{ if(!m.has(v.id)) m.set(v.id, v); });
+  const allS = Array.from(m.values()).sort((a,b)=> new Date(b.publishedAt)-new Date(a.publishedAt));
+  return { rap: rapS, sad: sadS, all: allS };
+}
+
+function detectCategory(videoId, packs){
+  if(packs.rap.some(x=>x.id===videoId)) return "rap";
+  if(packs.sad.some(x=>x.id===videoId)) return "sad";
+  return "all";
+}
+
+function pickSuggestions(packs, currentId, category){
+  const pool = category === "rap" ? packs.rap
+             : category === "sad" ? packs.sad
+             : packs.all;
+  return pool.filter(x=>x.id !== currentId).slice(0, 6);
 }
 
 function renderSuggestions(list){
@@ -551,105 +685,186 @@ function renderSuggestions(list){
   grid.querySelectorAll(".sCard").forEach(el=>{
     el.addEventListener("click", ()=>{
       const id = el.getAttribute("data-id");
+      // تحديث سياق التشغيل عند فتح مقترح
+      const saved = loadPlayerState() || {};
+      savePlayerState({ ...saved, nowId: id });
       window.location.href = `song.html?v=${encodeURIComponent(id)}&autoplay=1`;
     });
   });
 }
 
-async function loadAllForSongPage(){
-  // نجيب نفس قوائم الموقع عشان المقترحات والتصنيف
-  const [rap, sad] = await Promise.all([
-    getAllPlaylistItems(PLAYLISTS.rap),
-    getAllPlaylistItems(PLAYLISTS.sad),
-  ]);
-  const rapS = rap.sort((a,b)=> new Date(b.publishedAt)-new Date(a.publishedAt));
-  const sadS = sad.sort((a,b)=> new Date(b.publishedAt)-new Date(a.publishedAt));
-  const m = new Map();
-  [...rapS, ...sadS].forEach(v=>{ if(!m.has(v.id)) m.set(v.id, v); });
-  const allS = Array.from(m.values()).sort((a,b)=> new Date(b.publishedAt)-new Date(a.publishedAt));
-  return { rap: rapS, sad: sadS, all: allS };
+/* ---- YouTube IFrame API Loader ---- */
+function loadYTApi(){
+  return new Promise((resolve)=>{
+    if(window.YT && window.YT.Player){ resolve(); return; }
+    const tag = document.createElement("script");
+    tag.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(tag);
+    window.onYouTubeIframeAPIReady = ()=>resolve();
+  });
 }
 
-function detectCategory(videoId, packs){
-  if(packs.rap.some(x=>x.id===videoId)) return "rap";
-  if(packs.sad.some(x=>x.id===videoId)) return "sad";
-  return "all";
+function setPlayBtnUI(isPlaying){
+  const b = $("playBtn");
+  if(!b) return;
+  b.textContent = isPlaying ? "⏸" : "▶";
+}
+
+function applyVolumeToPlayer(v){
+  try{ state.ytPlayer?.setVolume(v); }catch{}
+}
+
+/* ---- Queue navigation (sequential/shuffle) ---- */
+function getQueue(){
+  const saved = loadPlayerState() || {};
+  const listIds = Array.isArray(saved.listIds) ? saved.listIds : [];
+  let idx = Number(saved.index ?? 0);
+  if(!Number.isFinite(idx)) idx = 0;
+  return { listIds, idx, saved };
+}
+
+function saveQueue(listIds, idx, nowId){
+  const saved = loadPlayerState() || {};
+  savePlayerState({
+    ...saved,
+    listIds,
+    index: idx,
+    nowId: nowId || saved.nowId || ""
+  });
+}
+
+function pickNextId(dir){
+  const { listIds, idx } = getQueue();
+  if(!listIds.length) return null;
+
+  if(getShuffle()){
+    // random (avoid same if possible)
+    if(listIds.length === 1) return listIds[0];
+    let tries = 0;
+    let cand = listIds[idx] || listIds[0];
+    while(tries < 10){
+      const r = Math.floor(Math.random() * listIds.length);
+      cand = listIds[r];
+      if(cand !== (listIds[idx] || "")) break;
+      tries++;
+    }
+    // update index
+    const newIdx = listIds.indexOf(cand);
+    saveQueue(listIds, newIdx >= 0 ? newIdx : 0, cand);
+    return cand;
+  }
+
+  let newIdx = idx;
+  if(dir === "prev") newIdx = (idx - 1 + listIds.length) % listIds.length;
+  else newIdx = (idx + 1) % listIds.length;
+
+  const cand = listIds[newIdx];
+  saveQueue(listIds, newIdx, cand);
+  return cand;
+}
+
+/* ---- Resume timer ---- */
+function startResumeSaver(videoId){
+  if(state.saveTimer) clearInterval(state.saveTimer);
+  state.saveTimer = setInterval(()=>{
+    try{
+      if(!state.ytPlayer || typeof state.ytPlayer.getCurrentTime !== "function") return;
+      const t = state.ytPlayer.getCurrentTime();
+      // سجل فقط إذا شغّال فعليًا
+      if(Number.isFinite(t) && t > 0) setResume(videoId, Math.floor(t));
+    }catch{}
+  }, 5000);
+}
+
+async function createYTPlayer(videoId, autoplay){
+  await loadYTApi();
+
+  return new Promise((resolve)=>{
+    state.ytPlayer = new YT.Player("ytPlayer", {
+      videoId,
+      playerVars: {
+        autoplay: autoplay ? 1 : 0,
+        controls: 1,
+        rel: 0,
+        modestbranding: 1,
+        playsinline: 1
+      },
+      events: {
+        onReady: (e)=>{
+          state.ytReady = true;
+
+          // Apply volume
+          const v = getVolume();
+          applyVolumeToPlayer(v);
+
+          // Resume
+          const resumeAt = getResume(videoId);
+          const hint = $("resumeHint");
+          if(resumeAt > 3){
+            try{
+              e.target.seekTo(resumeAt, true);
+              if(hint) hint.textContent = `تم الاستئناف من ${Math.floor(resumeAt)} ثانية`;
+              setTimeout(()=>{ if(hint) hint.textContent = ""; }, 1600);
+            }catch{}
+          }else{
+            if(hint) hint.textContent = "";
+          }
+
+          startResumeSaver(videoId);
+
+          setPlayBtnUI(autoplay);
+          resolve();
+        },
+        onStateChange: (e)=>{
+          if(!window.YT) return;
+          if(e.data === YT.PlayerState.PLAYING){
+            setPlayBtnUI(true);
+          }
+          if(e.data === YT.PlayerState.PAUSED){
+            setPlayBtnUI(false);
+          }
+          if(e.data === YT.PlayerState.ENDED){
+            // repeat or next
+            if(getRepeat()){
+              try{ state.ytPlayer.seekTo(0,true); state.ytPlayer.playVideo(); }catch{}
+              return;
+            }
+            const nextId = pickNextId("next");
+            if(nextId){
+              window.location.href = `song.html?v=${encodeURIComponent(nextId)}&autoplay=1`;
+            }
+          }
+        }
+      }
+    });
+  });
 }
 
 async function bootSongPage(){
   injectLinks();
 
+  // Apply saved mode/contrast/theme/motion
+  setTheme(getTheme());
+  setMotion(getMotion());
+  setMode(getMode());
+  setContrast(getContrast());
+  refreshModeButtons();
+
+  refreshSRVButtons();
+
   const q = parseQuery();
   const id = q.id;
+  state.nowId = id;
 
-  // Back button يرجع للقسم اللي كان فيه المستخدم
+  // Back
   $("backBtnSong")?.addEventListener("click", ()=>{
     const saved = loadPlayerState();
     const listName = saved?.currentListName || "all";
     window.location.href = `index.html#/${listName === "all" ? "all" : listName}`;
   });
 
-  // player
-  const frame = $("playerFrame");
-  if(frame && id){
-    frame.src = `https://www.youtube.com/embed/${encodeURIComponent(id)}?autoplay=${q.autoplay?1:0}&playsinline=1&rel=0`;
-  }
-
-  // open YouTube
-  const ytOpen = $("ytOpen");
-  if(ytOpen) ytOpen.href = `https://www.youtube.com/watch?v=${encodeURIComponent(id)}`;
-
-  // title/meta: نحاول نجيبها من القوائم (أدق)
-  let title = "الأغنية";
-  let publishedAt = "";
-
-  try{
-    safeText($("songNote"), "جاري تحميل بيانات الأغنية...");
-    const packs = await loadAllForSongPage();
-    const track = packs.all.find(x=>x.id===id) || packs.rap.find(x=>x.id===id) || packs.sad.find(x=>x.id===id);
-    if(track){
-      title = track.title;
-      publishedAt = track.publishedAt;
-    }
-    safeText($("songTitle"), title);
-    safeText($("songMeta"), publishedAt ? fmtDate(publishedAt) : "—");
-    safeText($("miniTitle"), title);
-    safeText($("miniMeta"), publishedAt ? fmtDate(publishedAt) : "—");
-    safeText($("songNote"), "");
-
-    // WhatsApp share
-    buildWhatsAppShare(id, title);
-
-    // Favorites
-    setFavButton(id);
-    $("favBtn")?.addEventListener("click", ()=>{
-      toggleFav(id);
-      setFavButton(id);
-      safeText($("songNote"), isFav(id) ? "تمت الإضافة للمفضلة." : "تمت الإزالة من المفضلة.");
-      setTimeout(()=>safeText($("songNote"), ""), 900);
-    });
-
-    // Save current state for mini + رجوع
-    const saved = loadPlayerState() || {};
-    savePlayerState({ ...saved, nowId: id });
-
-    // Suggestions
-    const category = detectCategory(id, packs);
-    safeText($("suggestHint"), category === "rap" ? "من قسم الراب"
-                        : category === "sad" ? "من قسم رومنسي/حزين/طربي"
-                        : "مقترحات عامة");
-    const sug = pickSuggestions(packs, id, category);
-    renderSuggestions(sug);
-
-  }catch(err){
-    console.error(err);
-    safeText($("songTitle"), title);
-    safeText($("songMeta"), "—");
-    buildWhatsAppShare(id, title);
-    setFavButton(id);
-    $("favBtn")?.addEventListener("click", ()=>{ toggleFav(id); setFavButton(id); });
-    safeText($("songNote"), `تعذر تحميل بيانات الأغنية (API): ${err.message}`);
-  }
+  // Open on YouTube
+  $("ytOpen")?.setAttribute("href", `https://www.youtube.com/watch?v=${encodeURIComponent(id)}`);
 
   // Copy link
   $("copyLink")?.addEventListener("click", async ()=>{
@@ -660,7 +875,7 @@ async function bootSongPage(){
     }catch{}
   });
 
-  // Rating + Comments
+  // Comments
   renderStars(id);
   renderComments(id);
 
@@ -688,48 +903,113 @@ async function bootSongPage(){
     setTimeout(()=>safeText($("cmStatus"), ""), 900);
   });
 
-  // Mini controls (صفحة الأغنية: Play/Pause فقط بتبديل autoplay)
+  // Favorites
+  setFavButton(id);
+  $("favBtn")?.addEventListener("click", ()=>{
+    toggleFav(id);
+    setFavButton(id);
+    safeText($("songNote"), isFav(id) ? "تمت الإضافة للمفضلة." : "تمت الإزالة من المفضلة.");
+    setTimeout(()=>safeText($("songNote"), ""), 900);
+  });
+
+  // Bind UI (mode/contrast + theme + motion)
+  bindThemeUI();
+  bindModeContrast();
+
+  // Bind shuffle/repeat/volume (volume affects player)
+  bindSRVControls((v)=>applyVolumeToPlayer(v));
+  refreshSRVButtons();
+
+  // Mini controls (real control)
   $("playBtn")?.addEventListener("click", ()=>{
-    const nextAuto = q.autoplay ? 0 : 1;
-    window.location.href = `song.html?v=${encodeURIComponent(id)}&autoplay=${nextAuto}`;
+    if(!state.ytPlayer) return;
+    try{
+      const st = state.ytPlayer.getPlayerState();
+      if(st === YT.PlayerState.PLAYING) state.ytPlayer.pauseVideo();
+      else state.ytPlayer.playVideo();
+    }catch{}
   });
+
   $("prevBtn")?.addEventListener("click", ()=>{
-    const saved = loadPlayerState();
-    const listName = saved?.currentListName || "all";
-    window.location.href = `index.html#/${listName}`;
+    const prevId = pickNextId("prev");
+    if(prevId) window.location.href = `song.html?v=${encodeURIComponent(prevId)}&autoplay=1`;
   });
+
   $("nextBtn")?.addEventListener("click", ()=>{
-    const saved = loadPlayerState();
-    const listName = saved?.currentListName || "all";
-    window.location.href = `index.html#/${listName}`;
+    const nextId = pickNextId("next");
+    if(nextId) window.location.href = `song.html?v=${encodeURIComponent(nextId)}&autoplay=1`;
   });
+
+  // Fill mini text later after metadata load
+  safeText($("miniTitle"), "—");
+  safeText($("miniMeta"), "—");
+
+  // Load metadata + suggestions
+  try{
+    safeText($("songNote"), "جاري تحميل بيانات الأغنية...");
+    const packs = await loadAllForSongPage();
+    const track = packs.all.find(x=>x.id===id) || packs.rap.find(x=>x.id===id) || packs.sad.find(x=>x.id===id);
+
+    const title = track?.title || "الأغنية";
+    const publishedAt = track?.publishedAt || "";
+    safeText($("songTitle"), title);
+    safeText($("songMeta"), publishedAt ? fmtDate(publishedAt) : "—");
+    safeText($("miniTitle"), title);
+    safeText($("miniMeta"), publishedAt ? fmtDate(publishedAt) : "—");
+    buildWhatsAppShare(id, title);
+
+    safeText($("songNote"), "");
+
+    const category = detectCategory(id, packs);
+    safeText($("suggestHint"), category === "rap" ? "من قسم الراب"
+                        : category === "sad" ? "من قسم رومنسي/حزين/طربي"
+                        : "مقترحات عامة");
+    renderSuggestions(pickSuggestions(packs, id, category));
+  }catch(err){
+    console.error(err);
+    safeText($("songTitle"), "الأغنية");
+    safeText($("songMeta"), "—");
+    buildWhatsAppShare(id, "الأغنية");
+    safeText($("songNote"), `تعذر تحميل بيانات الأغنية: ${err.message}`);
+  }
+
+  // Create YouTube Player
+  await createYTPlayer(id, q.autoplay);
+
+  // Apply saved volume to range UI
+  refreshSRVButtons();
 }
 
 /* ========= Global init ========= */
 window.F90 = { bootSongPage };
 
+/* ========= Index init ========= */
 window.addEventListener("load", ()=>{
-  // سنة
   const y = new Date().getFullYear();
   ["year","yearF","yearM"].forEach(id=>{ const el=$(id); if(el) el.textContent = y; });
 
-  // theme + motion from storage
+  // Apply saved settings
   setTheme(getTheme());
   setMotion(getMotion());
+  setMode(getMode());
+  setContrast(getContrast());
 
   injectLinks();
   bindDrawer();
   bindThemeUI();
+  bindModeContrast();
+  refreshModeButtons();
 
-  // nav buttons
+  // Phase 1 controls on index (store only)
+  bindSRVControls(null);
+  refreshSRVButtons();
+
   document.querySelectorAll("[data-navto]").forEach(b=>{
     b.addEventListener("click", ()=>{ location.hash = b.getAttribute("data-navto"); });
   });
 
-  // back button (index)
   $("backBtnIndex")?.addEventListener("click", ()=> history.back());
 
-  // refresh/share (index)
   $("refreshBtn")?.addEventListener("click", ()=>bootstrapIndex());
   $("shareBtn")?.addEventListener("click", async ()=>{
     try{
@@ -739,46 +1019,72 @@ window.addEventListener("load", ()=>{
     }catch{}
   });
 
-  // search/sort (index)
   $("searchInput")?.addEventListener("input", applySearchSort);
   $("sortSelect")?.addEventListener("change", applySearchSort);
 
-  // mini controls (index) — يفتح صفحة الأغنية الحالية
+  // Mini bar on index: يفتح صفحة الأغنية الحالية
   $("playBtn")?.addEventListener("click", ()=>{
     const saved = loadPlayerState();
     if(saved?.nowId){
       window.location.href = `song.html?v=${encodeURIComponent(saved.nowId)}&autoplay=1`;
       return;
     }
-    // إذا ما في: افتح أحدث (بعد التحميل)
     if(state.all[0]){
-      savePlayerState({ currentListName:"all", nowId: state.all[0].id });
+      savePlayerState({ currentListName:"all", nowId: state.all[0].id, listIds: state.all.map(x=>x.id), index: 0 });
       window.location.href = `song.html?v=${encodeURIComponent(state.all[0].id)}&autoplay=1`;
     }
   });
 
   $("prevBtn")?.addEventListener("click", ()=>{
-    const saved = loadPlayerState();
-    if(!saved?.nowId || !state.all.length) return;
-    const idx = state.all.findIndex(x=>x.id===saved.nowId);
-    const prev = state.all[(idx - 1 + state.all.length) % state.all.length];
-    savePlayerState({ currentListName:"all", nowId: prev.id });
-    window.location.href = `song.html?v=${encodeURIComponent(prev.id)}&autoplay=1`;
+    const saved = loadPlayerState() || {};
+    const listIds = Array.isArray(saved.listIds) ? saved.listIds : state.all.map(x=>x.id);
+    if(!listIds.length) return;
+
+    const cur = saved.nowId || listIds[0];
+    let idx = listIds.indexOf(cur);
+    if(idx < 0) idx = 0;
+
+    if(getShuffle()){
+      // random prev = random
+      const r = Math.floor(Math.random()*listIds.length);
+      const id = listIds[r];
+      savePlayerState({ ...saved, nowId: id, listIds, index: r });
+      window.location.href = `song.html?v=${encodeURIComponent(id)}&autoplay=1`;
+      return;
+    }
+
+    const prevIdx = (idx - 1 + listIds.length) % listIds.length;
+    const id = listIds[prevIdx];
+    savePlayerState({ ...saved, nowId: id, listIds, index: prevIdx });
+    window.location.href = `song.html?v=${encodeURIComponent(id)}&autoplay=1`;
   });
 
   $("nextBtn")?.addEventListener("click", ()=>{
-    const saved = loadPlayerState();
-    if(!saved?.nowId || !state.all.length) return;
-    const idx = state.all.findIndex(x=>x.id===saved.nowId);
-    const next = state.all[(idx + 1) % state.all.length];
-    savePlayerState({ currentListName:"all", nowId: next.id });
-    window.location.href = `song.html?v=${encodeURIComponent(next.id)}&autoplay=1`;
+    const saved = loadPlayerState() || {};
+    const listIds = Array.isArray(saved.listIds) ? saved.listIds : state.all.map(x=>x.id);
+    if(!listIds.length) return;
+
+    const cur = saved.nowId || listIds[0];
+    let idx = listIds.indexOf(cur);
+    if(idx < 0) idx = 0;
+
+    if(getShuffle()){
+      const r = Math.floor(Math.random()*listIds.length);
+      const id = listIds[r];
+      savePlayerState({ ...saved, nowId: id, listIds, index: r });
+      window.location.href = `song.html?v=${encodeURIComponent(id)}&autoplay=1`;
+      return;
+    }
+
+    const nextIdx = (idx + 1) % listIds.length;
+    const id = listIds[nextIdx];
+    savePlayerState({ ...saved, nowId: id, listIds, index: nextIdx });
+    window.location.href = `song.html?v=${encodeURIComponent(id)}&autoplay=1`;
   });
 
-  // routing (index)
   window.addEventListener("hashchange", routeIndex);
 
-  // لو هذه صفحة index
+  // Bootstrap only if index page
   if($("grid") && $("homePro")){
     bootstrapIndex();
   }

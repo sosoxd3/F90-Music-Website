@@ -534,4 +534,4 @@ html[data-motion="off"] .vbar{ animation:none; height:45%; }
   .grid{ grid-template-columns: 1fr; }
   .latestRow{ grid-template-columns: 1fr; }
   .suggestGrid{ grid-template-columns: 1fr; }
-    }
+}

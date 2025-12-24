@@ -29,8 +29,17 @@ html[data-mode="day"][data-contrast="high"]{
 /* Motion */
 html[data-motion="off"] *{ animation:none !important; transition:none !important; }
 
+/* ✅ FIX مهم: منع أي تمدد أفقي يخرب “مقياس” صفحة الهوم على الموبايل */
+html, body{ overflow-x:hidden; }
+html{ -webkit-text-size-adjust:100%; }
+
 *{ box-sizing:border-box; }
-html,body{ margin:0; padding:0; background:var(--bg); color:var(--txt); font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial; width:100%; }
+html,body{
+  margin:0; padding:0;
+  background:var(--bg); color:var(--txt);
+  font-family:system-ui, -apple-system, Segoe UI, Roboto, Arial;
+  width:100%;
+}
 a{ color:inherit; text-decoration:none; }
 button,input,select,textarea{ font:inherit; }
 img{ max-width:100%; height:auto; display:block; }
@@ -52,7 +61,12 @@ img{ max-width:100%; height:auto; display:block; }
 }
 
 /* Topbar */
-.topbar{ position:sticky; top:0; z-index:50; background:rgba(5,7,15,.86); backdrop-filter: blur(10px); border-bottom:1px solid var(--br); }
+.topbar{
+  position:sticky; top:0; z-index:50;
+  background:rgba(5,7,15,.86);
+  backdrop-filter: blur(10px);
+  border-bottom:1px solid var(--br);
+}
 html[data-mode="day"] .topbar{ background:rgba(247,248,255,.84); }
 
 /* ✅ FIX: نفس HTML تبعك (topbar > .wrap) */
@@ -122,8 +136,20 @@ html[data-mode="day"] .btn.primary{
 }
 
 /* Layout */
-.app{ display:grid; grid-template-columns: 320px 1fr; gap:16px; padding:18px 0 calc(var(--miniH) + 22px); }
-.sidebar{ background:var(--panel); border:1px solid var(--br); border-radius:var(--r); padding:14px; box-shadow:var(--shadow); height:fit-content; position:sticky; top:78px; }
+.app{
+  display:grid;
+  grid-template-columns: 320px 1fr;
+  gap:16px;
+  padding:18px 0 calc(var(--miniH) + 22px);
+  min-width:0; /* ✅ FIX */
+}
+.sidebar{
+  background:var(--panel); border:1px solid var(--br);
+  border-radius:var(--r); padding:14px; box-shadow:var(--shadow);
+  height:fit-content; position:sticky; top:78px;
+}
+.main{ min-width:0; } /* ✅ FIX */
+
 .sideTop{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
 .sideNav{ display:grid; gap:8px; margin:10px 0; }
 .sideNav a{ padding:10px 12px; border-radius:14px; border:1px solid var(--br); background:rgba(255,255,255,.03); }
@@ -459,11 +485,19 @@ html[data-mode="day"] .volWrap{ background:rgba(0,0,0,.03); }
 
 /* ✅ Mobile */
 @media (max-width: 980px){
-  .app{ grid-template-columns: 1fr; }
+  .app{
+    grid-template-columns: 1fr;
+    padding:14px 0 calc(var(--miniH) + 18px); /* ✅ أقل “بعد” بالهوم */
+  }
   .sidebar{ display:none; }
   .grid{ grid-template-columns: repeat(2, 1fr); }
   .mobileOnly{ display:inline-flex; }
-  .mini{ grid-template-columns: 1fr; height:auto; padding:10px 12px; }
+
+  .mini{
+    grid-template-columns: 1fr;
+    height:auto;
+    padding:10px 12px;
+  }
   .miniRight{ justify-content:flex-start; }
 
   /* ✅ أهم سطر: خلّي المحتوى يملأ شاشة الموبايل */
@@ -471,9 +505,12 @@ html[data-mode="day"] .volWrap{ background:rgba(0,0,0,.03); }
 
   /* ✅ الهوم يصير مريح، مش “بعيد” */
   .heroProInner{ padding:14px; }
-  .heroTitle{ font-size:22px; line-height:1.25; }
+  .heroTitle{ font-size:20px; line-height:1.25; }
+  .heroDesc{ font-size:13px; }
   .heroBtns .btn{ width:100%; justify-content:center; }
+
   .heroStats{ grid-template-columns: repeat(2, 1fr); }
+  .vhTitle{ font-size:22px; }
 
   /* Rows become horizontal scroll */
   .row{
@@ -482,6 +519,7 @@ html[data-mode="day"] .volWrap{ background:rgba(0,0,0,.03); }
     overflow:auto;
     padding-bottom:6px;
     scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch;
   }
   .rowCard{
     min-width: 84vw;

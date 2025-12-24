@@ -301,5 +301,33 @@ window.addEventListener("load", ()=>{
     b.addEventListener("click", ()=>{ location.hash = b.getAttribute("data-navto"); });
   });
 
+// ===== Drawer Fix (RTL / Mobile) =====
+  const drawerBtn = document.getElementById("drawerBtn");
+  const drawer = document.getElementById("drawer");
+  const overlay = document.getElementById("drawerOverlay");
+  const closeBtn = document.getElementById("closeDrawer");
+
+  function openDrawer(){
+    if(!drawer || !overlay) return;
+    drawer.classList.add("open");
+    overlay.classList.add("open");
+  }
+  function closeDrawer(){
+    if(!drawer || !overlay) return;
+    drawer.classList.remove("open");
+    overlay.classList.remove("open");
+  }
+
+  if(drawerBtn) drawerBtn.addEventListener("click", openDrawer);
+  if(closeBtn) closeBtn.addEventListener("click", closeDrawer);
+  if(overlay) overlay.addEventListener("click", closeDrawer);
+
+  // أهم شيء: أي ضغط على رابط داخل الدرج يقفله
+  if(drawer){
+    drawer.addEventListener("click", (e)=>{
+      const a = e.target.closest("a");
+      if(a) closeDrawer();
+    });
+  }
   bootstrap();
 });

@@ -395,7 +395,6 @@ function setCurrentList(name){
   } else if(name==="top"){
     const base = state.all.slice();
     base.sort((a,b)=> (getRating(b.id)||0) - (getRating(a.id)||0));
-    // اخفي غير المقيم إذا بدك: حالياً نخليهم بالآخر
     state.currentList = base;
   } else state.currentList = state.all.slice();
 }
@@ -498,23 +497,6 @@ async function bootstrapIndex(){
   }
 }
 
-/* ========= PWA (10) ========= */
-async function registerSW(){
-  if(!("serviceWorker" in navigator)) return;
-  try{
-    await navigator.serviceWorker.register("sw.js");
-  }catch(e){
-    console.warn("SW register failed:", e);
-  }
-}
-
-/* ========= Song Page Boot (موجود في F90.bootSongPage داخل نفس ملف app.js) ========= */
-/* ملاحظة: صفحة song.html تعتمد على F90.bootSongPage الموجود في النسخة السابقة.
-   لتجنب تكرار آلاف الأسطر هنا، هذا الملف مصمم بحيث يكون مشروعك (Phase 1) الأساسي
-   مع (8/9/10) للـ index. إذا كنت تريد دمج bootSongPage أيضاً داخل هذا الملف بنفس
-   الشكل الذي كان عندك سابقاً، أخبرني وسأعطيك نسخة موحدة بالكامل.
-*/
-
 /* ========= Init ========= */
 window.addEventListener("load", ()=>{
   const y = new Date().getFullYear();
@@ -589,6 +571,5 @@ window.addEventListener("load", ()=>{
 
   window.addEventListener("hashchange", routeIndex);
 
-  registerSW();
   bootstrapIndex();
 });

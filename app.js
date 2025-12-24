@@ -281,6 +281,7 @@ async function bootstrap(){
 }
 
 // Events (minimal and guaranteed)
+window.addEventListener("hashchange", ()=>{ $("drawer")?.classList.remove("open"); $("drawerOverlay")?.classList.remove("open"); });
 window.addEventListener("hashchange", route);
 window.addEventListener("load", ()=>{
   // make refresh button always work

@@ -207,5 +207,126 @@
   </section>
 
   <script src="app.js"></script>
+
+  <script>
+(function(){
+  // ابحث عن العناصر بأي اسم منطقي (id أو class)
+  const drawer =
+    document.getElementById("drawer") ||
+    document.querySelector(".drawer") ||
+    document.querySelector("aside[role='navigation']");
+
+  const overlay =
+    document.getElementById("drawerOverlay") ||
+    document.querySelector(".drawerOverlay") ||
+    document.querySelector(".overlay");
+
+  const btn =
+    document.getElementById("drawerBtn") ||
+    document.querySelector("[data-drawer-open]") ||
+    document.querySelector(".mobileOnly") ||
+    document.querySelector("button[aria-label='menu']");
+
+  const closeBtn =
+    document.getElementById("closeDrawer") ||
+    document.querySelector("#drawer .close") ||
+    document.querySelector(".closeDrawer");
+
+  if(!drawer || !overlay){
+    console.log("Drawer patch: elements not found", {drawer: !!drawer, overlay: !!overlay});
+    return;
+  }
+
+  // ارفعهم فوق كل شيء
+  drawer.style.zIndex = "99999";
+  overlay.style.zIndex = "99998";
+  overlay.style.position = "fixed";
+  overlay.style.inset = "0";
+  overlay.style.background = "rgba(0,0,0,.55)";
+  overlay.style.backdropFilter = "blur(4px)";
+  overlay.style.transition = "opacity .15s ease";
+
+  drawer.style.position = "fixed";
+  drawer.style.top = "0";
+  drawer.style.bottom = "0";
+  drawer.style.insetInlineEnd = "0";
+  drawer.style.width = drawer.style.width || "330px";
+  drawer.style.maxWidth = drawer.style.maxWidth || "86vw";
+  drawer.style.transition = "transform .15s ease";
+  drawer.style.background = drawer.style.background || "rgba(10,14,30,.92)";
+
+  function close(){
+    // اقفل بقوة
+    drawer.classList.remove("open");
+    overlay.classList.remove("open");
+
+    drawer.style.transform = "translateX(105%)";
+    drawer.style.visibility = "hidden";
+    drawer.style.pointerEvents = "none";
+
+    overlay.style.opacity = "0";
+    overlay.style.pointerEvents = "none";
+  }
+
+  function open(){
+    drawer.classList.add("open");
+    overlay.classList.add("open");
+
+    drawer.style.transform = "translateX(0)";
+    drawer.style.visibility = "visible";
+    drawer.style.pointerEvents = "auto";
+
+    overlay.style.opacity = "1";
+    overlay.style.pointerEvents = "auto";
+  }
+
+  // اقفل فورًا عند التحميل
+  close();
+
+  // اربط الأحداث على كل الأنواع
+  const onOpen = (e)=>{ e.preventDefault(); e.stopPropagation(); open(); };
+  const onClose = (e)=>{ e.preventDefault(); e.stopPropagation(); close(); };
+
+  if(btn){
+    btn.addEventListener("pointerdown", onOpen, true);
+    btn.addEventListener("click", onOpen, true);
+    btn.addEventListener("touchstart", onOpen, {passive:false, capture:true});
+  }
+
+  if(closeBtn){
+    closeBtn.addEventListener("pointerdown", onClose, true);
+    closeBtn.addEventListener("click", onClose, true);
+    closeBtn.addEventListener("touchstart", onClose, {passive:false, capture:true});
+  }
+
+  overlay.addEventListener("pointerdown", onClose, true);
+  overlay.addEventListener("click", onClose, true);
+  overlay.addEventListener("touchstart", onClose, {passive:false, capture:true});
+
+  // أي رابط داخل الدرج يسكر
+  drawer.addEventListener("pointerdown", (e)=>{
+    if(e.target.closest("a")) close();
+  }, true);
+
+  // تغيير صفحات/هاش يسكر
+  window.addEventListener("hashchange", close);
+
+  // ضغط خارج الدرج يسكر
+  document.addEventListener("pointerdown", (e)=>{
+    if(overlay.style.pointerEvents !== "auto") return;
+    if(e.target.closest("#drawer") || e.target.closest(".drawer")) return;
+    if(btn && e.target.closest("#drawerBtn")) return;
+    close();
+  }, true);
+
+  // زر ESC
+  document.addEventListener("keydown", (e)=>{
+    if(e.key === "Escape") close();
+  });
+
+  console.log("Drawer patch: active");
+})();
+    
+      </script>
 </body>
             </html>

@@ -1,5 +1,4 @@
-// ===== F90 MUSIC - Arabic Only - FINAL app.js (FORCE Drawer Close + Stable Player + Prev/Play/Pause/Next) =====
-// ضع مفتاحك هنا:
+// ===== F90 MUSIC - Arabic Only - FINAL app.js (Drawer FIXED + Stable Player + Prev/Play/Pause/Next) =====
 const YT_API_KEY = "AIzaSyD3mvCx80XsvwrURRg2RwaD8HmOKqhYkek";
 const YT_HANDLE  = "F90-Music";
 
@@ -17,9 +16,16 @@ const LINKS = {
 };
 
 const $ = (id)=>document.getElementById(id);
-const escapeHtml = (s)=>String(s??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+const escapeHtml = (s)=>String(s??"")
+  .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+  .replaceAll('"',"&quot;").replaceAll("'","&#039;");
 const fmtDate = (iso)=> new Date(iso).toLocaleDateString("ar", {year:"numeric", month:"short", day:"numeric"});
-const nfmt = (num)=>{ const n=Number(num||0); return n>=1e6?(n/1e6).toFixed(1).replace(/\.0$/,"")+"م":n>=1e3?(n/1e3).toFixed(1).replace(/\.0$/,"")+"ألف":String(n); };
+const nfmt = (num)=>{
+  const n=Number(num||0);
+  return n>=1e6 ? (n/1e6).toFixed(1).replace(/\.0$/,"")+"م"
+       : n>=1e3 ? (n/1e3).toFixed(1).replace(/\.0$/,"")+"ألف"
+       : String(n);
+};
 
 function setText(id, v){ const el=$(id); if(el) el.textContent = v; }
 function showStatus(msg){ const el=$("homeStatus"); if(el) el.textContent = msg || ""; }
@@ -52,6 +58,7 @@ async function ytFetch(url){
   if(!r.ok) throw new Error("YT API error " + r.status);
   return r.json();
 }
+
 async function getChannelIdFromHandle(handle){
   const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&maxResults=1&q=${encodeURIComponent("@"+handle)}&key=${YT_API_KEY}`;
   const data = await ytFetch(url);
@@ -59,6 +66,7 @@ async function getChannelIdFromHandle(handle){
   if(!id) throw new Error("channel not found");
   return id;
 }
+
 async function getUploadsPlaylistId(channelId){
   const url = `https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${encodeURIComponent(channelId)}&key=${YT_API_KEY}`;
   const data = await ytFetch(url);
@@ -66,24 +74,29 @@ async function getUploadsPlaylistId(channelId){
   if(!uploads) throw new Error("uploads not found");
   return uploads;
 }
+
 async function getAllPlaylistItems(playlistId){
   let items=[], pageToken="";
   while(true){
     const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${encodeURIComponent(playlistId)}&maxResults=50&pageToken=${encodeURIComponent(pageToken)}&key=${YT_API_KEY}`;
     const data = await ytFetch(url);
+
     const chunk = (data.items||[]).map(it=>({
       id: it.contentDetails?.videoId,
       title: it.snippet?.title || "",
       publishedAt: it.contentDetails?.videoPublishedAt || it.snippet?.publishedAt,
       thumb: it.snippet?.thumbnails?.high?.url || it.snippet?.thumbnails?.medium?.url || "",
     })).filter(v=>v.id && v.title && v.title!=="Private video" && v.title!=="Deleted video");
+
     items.push(...chunk);
     if(!data.nextPageToken) break;
     pageToken = data.nextPageToken;
   }
-  const m=new Map(); items.forEach(v=>{ if(!m.has(v.id)) m.set(v.id,v); });
+  const m=new Map();
+  items.forEach(v=>{ if(!m.has(v.id)) m.set(v.id,v); });
   return Array.from(m.values());
 }
+
 async function getVideosStats(ids){
   const out=new Map();
   for(let i=0;i<ids.length;i+=50){
@@ -96,6 +109,7 @@ async function getVideosStats(ids){
   }
   return out;
 }
+
 async function checkLive(channelId){
   const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${encodeURIComponent(channelId)}&eventType=live&type=video&maxResults=1&key=${YT_API_KEY}`;
   const data = await ytFetch(url);
@@ -119,70 +133,63 @@ async function fetchRSS(channelId){
   }).filter(x=>x.id);
 }
 
-// ---------------- Drawer (FORCE FIX) ----------------
+// ---------------- Drawer (FINAL FIX) ----------------
 function bindDrawer(){
   const drawerBtn = document.getElementById("drawerBtn");
-  const drawer = document.getElementById("drawer");
-  const overlay = document.getElementById("drawerOverlay");
-  const closeBtn = document.getElementById("closeDrawer");
+  const drawer    = document.getElementById("drawer");
+  const overlay   = document.getElementById("drawerOverlay");
+  const closeBtn  = document.getElementById("closeDrawer");
 
-  if(!drawer || !overlay) return;
+  if(!drawerBtn || !drawer || !overlay || !closeBtn) return;
 
-  // ---- helpers ----
   const open = ()=>{
     drawer.classList.add("open");
     overlay.classList.add("open");
+    document.body.style.overflow = "hidden";
   };
+
   const close = ()=>{
     drawer.classList.remove("open");
     overlay.classList.remove("open");
+    document.body.style.overflow = "";
   };
 
-  // اقفل فوراً عند التحميل (حتى لو كان مفتوح)
+  // اقفل فوراً (حل فتح تلقائي/تعليق)
   close();
 
-  // امسح أي مستمعين قدام (مهم إذا bindDrawer بينادي أكثر من مرة)
-  drawerBtn?.replaceWith(drawerBtn.cloneNode(true));
-  closeBtn?.replaceWith(closeBtn.cloneNode(true));
-
-  // أعد التقاط العناصر بعد الاستبدال
-  const drawerBtn2 = document.getElementById("drawerBtn");
-  const closeBtn2  = document.getElementById("closeDrawer");
-
-  // فتح
-  drawerBtn2?.addEventListener("click", (e)=>{
+  // فتح الدرج
+  drawerBtn.addEventListener("click", (e)=>{
     e.preventDefault();
     e.stopPropagation();
     open();
   });
 
-  // إغلاق بالزر
-  closeBtn2?.addEventListener("click", (e)=>{
+  // إغلاق بزر الإغلاق
+  closeBtn.addEventListener("click", (e)=>{
     e.preventDefault();
     e.stopPropagation();
     close();
   });
 
-  // إغلاق بالـ Overlay (المشكلة غالباً هنا)
+  // إغلاق عند الضغط على الخلفية (الأضمن للموبايل)
   overlay.addEventListener("pointerdown", (e)=>{
     e.preventDefault();
     e.stopPropagation();
     close();
   }, true);
 
-  overlay.addEventListener("click", (e)=>{
-    e.preventDefault();
-    e.stopPropagation();
-    close();
-  }, true);
-
-  // إغلاق عند الضغط على أي رابط داخل الدرج
+  // إغلاق عند الضغط على رابط داخل الدرج
   drawer.addEventListener("click", (e)=>{
     if(e.target.closest("a")) close();
   }, true);
 
   // إغلاق عند تغيير الصفحة
   window.addEventListener("hashchange", close);
+
+  // إغلاق عند ESC
+  document.addEventListener("keydown", (e)=>{
+    if(e.key === "Escape") close();
+  });
 
   // إغلاق عند الضغط خارج الدرج وهو مفتوح
   document.addEventListener("pointerdown", (e)=>{
@@ -191,16 +198,8 @@ function bindDrawer(){
     if(e.target.closest("#drawerBtn")) return;
     close();
   }, true);
-
-  // إغلاق عند ESC
-  document.addEventListener("keydown", (e)=>{
-    if(e.key === "Escape") close();
-  });
-
-  // ضمان نهائي
-  close();
 }
-```0
+
 // ---------------- UI Render ----------------
 function renderGrid(list){
   const grid = $("grid");
@@ -342,7 +341,9 @@ function setCurrentList(name){
   if(name==="rap") state.currentList = state.rap.slice();
   else if(name==="sad") state.currentList = state.sad.slice();
   else if(name==="live"){
-    state.currentList = state.liveVideoId ? [{ id: state.liveVideoId, title:"بث مباشر", publishedAt:new Date().toISOString(), thumb:`https://i.ytimg.com/vi/${state.liveVideoId}/hqdefault.jpg` }] : [];
+    state.currentList = state.liveVideoId
+      ? [{ id: state.liveVideoId, title:"بث مباشر", publishedAt:new Date().toISOString(), thumb:`https://i.ytimg.com/vi/${state.liveVideoId}/hqdefault.jpg` }]
+      : [];
   } else state.currentList = state.all.slice();
 
   if(state.now){
@@ -517,7 +518,7 @@ function route(){
 }
 
 window.addEventListener("load", async ()=>{
-  // FORCE closed before anything else
+  // اقفل بصمت قبل أي شيء
   $("drawer")?.classList.remove("open");
   $("drawerOverlay")?.classList.remove("open");
 
@@ -525,13 +526,14 @@ window.addEventListener("load", async ()=>{
   ["year","yearF","yearM"].forEach(id=>{ const el=$(id); if(el) el.textContent = y; });
 
   injectLinks();
-  bindDrawer();
+  bindDrawer(); // استدعاء واحد فقط
 
   $("themeBtn")?.addEventListener("click", ()=>{
     const cur = document.documentElement.getAttribute("data-theme") || "neon";
     const next = (cur==="neon") ? "cyan" : (cur==="cyan") ? "pink" : "neon";
     document.documentElement.setAttribute("data-theme", next);
   });
+
   $("motionBtn")?.addEventListener("click", ()=>{
     const cur = document.documentElement.getAttribute("data-motion") || "on";
     document.documentElement.setAttribute("data-motion", cur==="off" ? "on" : "off");
@@ -542,6 +544,7 @@ window.addEventListener("load", async ()=>{
   });
 
   $("refreshBtn")?.addEventListener("click", ()=>bootstrap());
+
   $("shareBtn")?.addEventListener("click", async ()=>{
     try{
       await navigator.clipboard.writeText(location.href);
@@ -571,60 +574,3 @@ window.addEventListener("load", async ()=>{
   bootstrap();
 });
 ```0
-function bindDrawer(){
-  const drawerBtn = document.getElementById("drawerBtn");
-  const drawer = document.getElementById("drawer");
-  const overlay = document.getElementById("drawerOverlay");
-  const closeBtn = document.getElementById("closeDrawer");
-
-  if(!drawer || !overlay) return;
-
-  const open = ()=>{
-    drawer.classList.add("open");
-    overlay.classList.add("open");
-  };
-
-  const close = ()=>{
-    drawer.classList.remove("open");
-    overlay.classList.remove("open");
-  };
-
-  // اقفل فور التحميل
-  close();
-
-  drawerBtn?.addEventListener("click", (e)=>{
-    e.preventDefault();
-    e.stopPropagation();
-    open();
-  });
-
-  closeBtn?.addEventListener("click", (e)=>{
-    e.preventDefault();
-    e.stopPropagation();
-    close();
-  });
-
-  overlay.addEventListener("click", (e)=>{
-    e.preventDefault();
-    e.stopPropagation();
-    close();
-  });
-
-  drawer.addEventListener("click", (e)=>{
-    if(e.target.closest("a")) close();
-  });
-
-  window.addEventListener("hashchange", close);
-
-  document.addEventListener("keydown", (e)=>{
-    if(e.key === "Escape") close();
-  });
-
-  document.addEventListener("click", (e)=>{
-    if(!drawer.classList.contains("open")) return;
-    if(e.target.closest("#drawer")) return;
-    if(e.target.closest("#drawerBtn")) return;
-    close();
-  }, true);
-}
-window.addEventListener("load", bindDrawer);

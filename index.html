@@ -1,99 +1,253 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="neon">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>F90 Music | اف تسعين للإنتاج الفني</title>
   <meta name="theme-color" content="#05070F">
+  <title>F90 Music | اف تسعين للإنتاج الفني</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div class="bgFX"></div>
 
-  <header class="header">
-    <div class="container">
-      <div class="brand">
+  <!-- Topbar -->
+  <header class="topbar">
+    <div class="wrap">
+      <div class="brand" role="button" tabindex="0" id="goHome">
         <div class="logo">F90</div>
-        <div class="brandText">
-          <div class="brandTitle">اف تسعين للإنتاج الفني</div>
-          <div class="brandSub">F90 Music — Official</div>
+        <div class="brandTxt">
+          <div class="brandTitle" id="brandTitle">اف تسعين للإنتاج الفني</div>
+          <div class="brandSub" id="brandSub">F90 Music — Official</div>
         </div>
       </div>
 
-      <nav class="nav">
-        <a data-nav="index.html" href="index.html">الرئيسية</a>
-        <a data-nav="songs.html" href="songs.html">الأغاني</a>
-      </nav>
-
-      <div class="actions">
+      <div class="topActions">
+        <button class="btn pill mobileOnly" id="drawerBtn" type="button" aria-label="menu">☰</button>
+        <button class="btn pill" id="langBtn" type="button">AR / EN</button>
+        <button class="btn pill" id="themeBtn" type="button">Theme</button>
+        <button class="btn pill" id="motionBtn" type="button">Motion</button>
         <a class="btn primary" data-link="youtube" target="_blank" rel="noopener">YouTube</a>
-        <a class="btn" data-link="tiktok" target="_blank" rel="noopener">TikTok</a>
-        <a class="btn" data-link="insta" target="_blank" rel="noopener">Instagram</a>
       </div>
     </div>
   </header>
 
-  <main class="container">
-    <section class="hero">
-      <div class="heroGrid">
-        <div class="heroCard">
-          <div class="heroContent">
-            <div class="pill">F90 • Music</div>
-            <h1>إصدارات موسيقية • تشغيل مباشر • تحديث تلقائي</h1>
-            <p>كل أغنية تنزل على القناة تظهر هنا تلقائيًا، ولكل أغنية صفحة وتشغيل داخل الموقع.</p>
+  <!-- Mobile Drawer -->
+  <div class="drawerOverlay" id="drawerOverlay"></div>
+  <aside class="drawer" id="drawer">
+    <div class="sideTop">
+      <div class="pill">Menu</div>
+      <button class="btn pill" id="closeDrawer" type="button">✕</button>
+    </div>
+    <nav class="sideNav" id="sideNavMobile"></nav>
 
-            <div class="heroBtns">
-              <a class="btn pink" data-link="whatsapp" target="_blank" rel="noopener">WhatsApp لطلب الأغاني</a>
-              <a class="btn ghost" data-link="email">Email</a>
-              <a class="btn primary" href="songs.html">كل الأغاني</a>
-            </div>
+    <div class="sideCard">
+      <div class="sideCardTitle">F90 Music</div>
+      <div class="sideLinks">
+        <a class="btn" data-link="tiktok" target="_blank" rel="noopener">TikTok</a>
+        <a class="btn" data-link="insta" target="_blank" rel="noopener">Instagram</a>
+        <a class="btn" data-link="whatsapp" target="_blank" rel="noopener">WhatsApp</a>
+        <a class="btn" data-link="email">Email</a>
+      </div>
+    </div>
 
-            <div id="status" class="small" style="margin-top:10px"></div>
-          </div>
+    <div class="sideFoot">
+      <div class="small">© <span id="yearM"></span> F90</div>
+    </div>
+  </aside>
+
+  <main class="wrap app">
+    <!-- Desktop Sidebar -->
+    <aside class="sidebar">
+      <div class="sideTop">
+        <div class="pill">F90</div>
+        <div class="small" id="statsMini">—</div>
+      </div>
+
+      <nav class="sideNav" id="sideNav"></nav>
+
+      <div class="sideCard">
+        <div class="sideCardTitle">Official</div>
+        <div class="sideLinks">
+          <a class="btn primary" data-link="youtube" target="_blank" rel="noopener">Subscribe</a>
+          <a class="btn" data-link="tiktok" target="_blank" rel="noopener">TikTok</a>
+          <a class="btn" data-link="insta" target="_blank" rel="noopener">Instagram</a>
         </div>
+        <div class="hr"></div>
+        <div class="sideCardTitle" id="orderTitle">طلبات الأغاني</div>
+        <div class="sideLinks">
+          <a class="btn primary" data-link="whatsapp" target="_blank" rel="noopener">WhatsApp</a>
+          <a class="btn" data-link="email">Email</a>
+        </div>
+      </div>
 
-        <div class="eqWrap">
-          <div class="eqTop">
-            <div class="pill">Live</div>
-            <div class="pill">© <span id="year"></span> F90</div>
+      <div class="sideFoot">
+        <div class="small">حقوق الطبع والنشر محفوظة © <span id="year"></span> F90</div>
+      </div>
+    </aside>
+
+    <!-- Main View -->
+    <section class="main">
+      <div class="viewHeader">
+        <div class="vhLeft">
+          <div class="pill" id="viewPill">F90</div>
+          <h1 class="vhTitle" id="viewTitle">الرئيسية</h1>
+          <div class="small" id="viewSubtitle">—</div>
+        </div>
+        <div class="vhRight">
+          <button class="btn" id="refreshBtn" type="button">Refresh</button>
+          <button class="btn" id="shareBtn" type="button">Share</button>
+        </div>
+      </div>
+
+      <!-- Home Hero -->
+      <section class="hero" id="hero">
+        <div class="heroInner">
+          <div class="pill" id="heroPill">F90 • Music</div>
+          <h2 class="heroTitle" id="heroTitle">واجهة فخمة + تشغيل ثابت + تصنيف منظم</h2>
+          <p class="heroDesc" id="heroDesc">
+            إصداراتك تظهر تلقائيًا. الراب والرومنسي/الحزين منفصلين. مشغل ثابت وQueue ومفضلة وتاريخ.
+          </p>
+
+          <div class="heroBtns">
+            <button class="btn primary" data-navto="#/all">كل الأغاني</button>
+            <button class="btn" data-navto="#/rap">الراب</button>
+            <button class="btn" data-navto="#/sad">رومنسي/حزين/طربي</button>
+            <button class="btn pill" id="liveQuickBtn" data-navto="#/live">LIVE</button>
           </div>
 
           <div class="eq" aria-hidden="true">
-            <div class="bar" style="height:30%"></div>
-            <div class="bar" style="height:70%"></div>
-            <div class="bar" style="height:45%"></div>
-            <div class="bar" style="height:85%"></div>
-            <div class="bar" style="height:55%"></div>
-            <div class="bar" style="height:75%"></div>
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
           </div>
 
-          <div style="margin-top:14px">
-            <div class="pill">Total Tracks: <b id="totalVideos" style="margin-inline-start:6px">-</b></div>
-            <div class="pill" style="margin-top:8px">Latest: <b id="latestDate" style="margin-inline-start:6px">-</b></div>
+          <div class="heroStats">
+            <div class="stat">
+              <div class="statNum" id="totalTracks">—</div>
+              <div class="statLbl" id="lblTotal">عدد الأغاني</div>
+            </div>
+            <div class="stat">
+              <div class="statNum" id="latestTrack">—</div>
+              <div class="statLbl" id="lblLatest">آخر إصدار</div>
+            </div>
+            <div class="stat">
+              <div class="statNum" id="liveState">—</div>
+              <div class="statLbl" id="lblLive">Live</div>
+            </div>
+          </div>
+
+          <div class="small" id="homeStatus"></div>
+        </div>
+      </section>
+
+      <!-- Toolbars -->
+      <section class="toolbar" id="toolbar">
+        <input class="input" id="searchInput" placeholder="ابحث باسم الأغنية..." />
+        <select class="select" id="sortSelect">
+          <option value="date_desc">الأحدث</option>
+          <option value="date_asc">الأقدم</option>
+          <option value="views_desc">الأكثر مشاهدة</option>
+          <option value="title_asc">A-Z</option>
+        </select>
+        <select class="select" id="filterSelect">
+          <option value="all">All</option>
+          <option value="rap">Rap</option>
+          <option value="sad">Sad</option>
+          <option value="fav">Favorites</option>
+          <option value="later">Listen Later</option>
+          <option value="history">History</option>
+        </select>
+      </section>
+
+      <!-- Grid -->
+      <section class="grid" id="grid"></section>
+
+      <!-- Queue Panel -->
+      <section class="panel" id="panelQueue">
+        <div class="panelHead">
+          <div>
+            <div class="pill">Queue</div>
+            <div class="small" id="queueHint">—</div>
+          </div>
+          <div class="panelBtns">
+            <button class="btn" id="clearQueueBtn" type="button">Clear</button>
           </div>
         </div>
-      </div>
-    </section>
+        <div class="list" id="queueList"></div>
+      </section>
 
-    <section class="section">
-      <div class="sectionHead">
-        <h2>أحدث الإصدارات</h2>
-        <a class="pill" href="songs.html">عرض الكل</a>
-      </div>
-      <div id="featuredGrid" class="grid"></div>
-    </section>
+      <!-- Song Panel -->
+      <section class="panel" id="panelSong">
+        <div class="panelHead">
+          <div>
+            <div class="pill" id="songPill">Track</div>
+            <div class="panelTitle" id="songTitle">—</div>
+            <div class="small" id="songMeta">—</div>
+          </div>
+          <div class="panelBtns">
+            <button class="btn" id="addQueueBtn" type="button">+ Queue</button>
+            <button class="btn" id="favBtn" type="button">♡</button>
+            <button class="btn" id="laterBtn" type="button">Later</button>
+            <a class="btn primary" id="ytBtn" target="_blank" rel="noopener">YouTube</a>
+          </div>
+        </div>
 
-    <footer class="footer">
-      <div class="copy">حقوق الطبع والنشر محفوظة © <span id="year"></span> F90</div>
-      <div class="footerLinks">
-        <a data-link="youtube" target="_blank" rel="noopener">YouTube</a>
-        <a data-link="tiktok" target="_blank" rel="noopener">TikTok</a>
-        <a data-link="insta" target="_blank" rel="noopener">Instagram</a>
-        <a data-link="whatsapp" target="_blank" rel="noopener">WhatsApp</a>
-        <a data-link="email">Email</a>
-      </div>
-    </footer>
+        <div class="playerWrap">
+          <iframe id="player"
+            title="F90 Player"
+            loading="lazy"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowfullscreen></iframe>
+        </div>
+
+        <div class="panelGrid">
+          <div class="card pad">
+            <div class="cardTitle" id="rateTitle">قيّم الأغنية</div>
+            <div class="stars" id="stars">
+              <div class="star">★</div><div class="star">★</div><div class="star">★</div><div class="star">★</div><div class="star">★</div>
+            </div>
+            <div class="small" id="localNote">محفوظ على جهازك</div>
+          </div>
+
+          <div class="card pad">
+            <div class="cardTitle" id="commentsTitle">التعليقات</div>
+            <textarea class="textarea" id="commentInput" placeholder="اكتب تعليقك هنا…"></textarea>
+            <div class="row">
+              <button class="btn primary" id="addCommentBtn" type="button">إضافة</button>
+              <a class="btn" data-link="whatsapp" target="_blank" rel="noopener">WhatsApp</a>
+              <a class="btn" data-link="email">Email</a>
+            </div>
+            <div class="list" id="commentsList"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="foot">
+        <div class="small">حقوق الطبع والنشر محفوظة © <span id="yearF"></span> F90</div>
+        <div class="footLinks">
+          <a data-link="youtube" target="_blank" rel="noopener">YouTube</a>
+          <a data-link="tiktok" target="_blank" rel="noopener">TikTok</a>
+          <a data-link="insta" target="_blank" rel="noopener">Instagram</a>
+          <a data-link="whatsapp" target="_blank" rel="noopener">WhatsApp</a>
+          <a data-link="email">Email</a>
+        </div>
+      </footer>
+    </section>
   </main>
+
+  <!-- Mini Player -->
+  <section class="mini" id="mini">
+    <div class="miniLeft">
+      <div class="miniTitle" id="miniTitle">—</div>
+      <div class="miniMeta" id="miniMeta">—</div>
+    </div>
+    <div class="miniBtns">
+      <button class="btn pill" id="prevBtn" type="button">⟵</button>
+      <button class="btn primary pill" id="playBtn" type="button">Play</button>
+      <button class="btn pill" id="nextBtn" type="button">⟶</button>
+      <button class="btn pill" id="queueBtn" type="button">Queue</button>
+    </div>
+  </section>
 
   <script src="app.js"></script>
 </body>

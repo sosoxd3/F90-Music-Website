@@ -16,6 +16,16 @@ const LINKS = {
   email:   "mailto:f90gimme@gmail.com",
 };
 
+const THEMES = [
+  { id:"neon",   name:"Neon"   },
+  { id:"cyan",   name:"Cyan"   },
+  { id:"purple", name:"Purple" },
+  { id:"gold",   name:"Gold"   },
+  { id:"red",    name:"Red"    },
+  { id:"green",  name:"Green"  },
+  { id:"mono",   name:"Mono"   },
+];
+
 /* ========= أدوات ========= */
 const $ = (id)=>document.getElementById(id);
 const escapeHtml = (s)=>String(s ?? "")
@@ -24,7 +34,39 @@ const escapeHtml = (s)=>String(s ?? "")
 const fmtDate = (iso)=> new Date(iso).toLocaleDateString("ar", {year:"numeric", month:"short", day:"numeric"});
 const safeText = (el, v)=>{ if(el) el.textContent = v; };
 
-/* ========= حالة ========= */
+function setHrefAll(k, url){
+  document.querySelectorAll(`[data-link="${k}"]`).forEach(a=>a.setAttribute("href", url));
+}
+function injectLinks(){
+  Object.keys(LINKS).forEach(k=> setHrefAll(k, LINKS[k]));
+}
+
+/* ========= تخزين ========= */
+const STORE_KEY = "f90_player_state_v2";
+const THEME_KEY = "f90_theme_v1";
+const MOTION_KEY= "f90_motion_v1";
+
+function savePlayerState(obj){
+  try{ localStorage.setItem(STORE_KEY, JSON.stringify(obj)); }catch{}
+}
+function loadPlayerState(){
+  try{ return JSON.parse(localStorage.getItem(STORE_KEY)||"null"); }catch{ return null; }
+}
+
+function getTheme(){ return localStorage.getItem(THEME_KEY) || "neon"; }
+function setTheme(t){
+  const ok = THEMES.find(x=>x.id===t) ? t : "neon";
+  document.documentElement.setAttribute("data-theme", ok);
+  try{ localStorage.setItem(THEME_KEY, ok); }catch{}
+}
+function getMotion(){ return localStorage.getItem(MOTION_KEY) || "on"; }
+function setMotion(v){
+  const val = (v==="off") ? "off" : "on";
+  document.documentElement.setAttribute("data-motion", val);
+  try{ localStorage.setItem(MOTION_KEY, val); }catch{}
+}
+
+/* ========= بيانات ========= */
 const state = {
   rap: [],
   sad: [],
@@ -34,89 +76,8 @@ const state = {
   currentIndex: -1,
   now: null,
   isPlaying: false,
+  ratings: new Map(), // videoId -> 1..5
 };
-
-/* ========= تخزين بسيط للمشغل ========= */
-const STORE_KEY = "f90_player_state_v1";
-function savePlayerState(){
-  try{
-    const data = {
-      currentListName: state.currentListName,
-      currentIndex: state.currentIndex,
-      now: state.now ? { id: state.now.id, title: state.now.title, publishedAt: state.now.publishedAt } : null,
-      isPlaying: state.isPlaying
-    };
-    localStorage.setItem(STORE_KEY, JSON.stringify(data));
-  }catch{}
-}
-function loadPlayerState(){
-  try{
-    const raw = localStorage.getItem(STORE_KEY);
-    if(!raw) return null;
-    return JSON.parse(raw);
-  }catch{ return null; }
-}
-
-/* ========= روابط ========= */
-function setHrefAll(k, url){
-  document.querySelectorAll(`[data-link="${k}"]`).forEach(a=>a.setAttribute("href", url));
-}
-function injectLinks(){
-  Object.keys(LINKS).forEach(k=> setHrefAll(k, LINKS[k]));
-}
-
-/* ========= Drawer (نهائي ثابت) ========= */
-function bindDrawer(){
-  const drawerBtn = $("drawerBtn");
-  const drawer    = $("drawer");
-  const overlay   = $("drawerOverlay");
-  const closeBtn  = $("closeDrawer");
-
-  if(!drawer || !overlay) return;
-
-  const open = ()=>{
-    drawer.classList.add("open");
-    overlay.classList.add("open");
-    document.body.style.overflow = "hidden";
-  };
-  const close = ()=>{
-    drawer.classList.remove("open");
-    overlay.classList.remove("open");
-    document.body.style.overflow = "";
-  };
-
-  // اقفل دائمًا عند التحميل
-  close();
-
-  drawerBtn?.addEventListener("click", (e)=>{
-    e.preventDefault(); e.stopPropagation();
-    open();
-  });
-
-  closeBtn?.addEventListener("click", (e)=>{
-    e.preventDefault(); e.stopPropagation();
-    close();
-  });
-
-  overlay.addEventListener("pointerdown", (e)=>{
-    e.preventDefault(); e.stopPropagation();
-    close();
-  }, true);
-
-  drawer.addEventListener("click", (e)=>{
-    if(e.target.closest("a")) close();
-  }, true);
-
-  window.addEventListener("hashchange", close);
-  document.addEventListener("keydown", (e)=>{ if(e.key === "Escape") close(); });
-
-  document.addEventListener("pointerdown", (e)=>{
-    if(!drawer.classList.contains("open")) return;
-    if(e.target.closest("#drawer")) return;
-    if(e.target.closest("#drawerBtn")) return;
-    close();
-  }, true);
-}
 
 /* ========= YouTube API ========= */
 async function ytFetchJson(url){
@@ -124,7 +85,6 @@ async function ytFetchJson(url){
   const txt = await r.text();
   let data = null;
   try{ data = JSON.parse(txt); }catch{ data = { raw: txt }; }
-
   if(!r.ok){
     const msg = data?.error?.message || `HTTP ${r.status}`;
     throw new Error(msg);
@@ -160,19 +120,122 @@ async function getAllPlaylistItems(playlistId){
     pageToken = data.nextPageToken;
   }
 
-  // unique
   const m = new Map();
   items.forEach(v=>{ if(!m.has(v.id)) m.set(v.id, v); });
   return Array.from(m.values());
 }
 
-/* ========= UI ========= */
+/* ========= Drawer ========= */
+function bindDrawer(){
+  const drawerBtn = $("drawerBtn");
+  const drawer    = $("drawer");
+  const overlay   = $("drawerOverlay");
+  const closeBtn  = $("closeDrawer");
+  if(!drawer || !overlay) return;
+
+  const open = ()=>{ drawer.classList.add("open"); overlay.classList.add("open"); document.body.style.overflow="hidden"; };
+  const close= ()=>{ drawer.classList.remove("open"); overlay.classList.remove("open"); document.body.style.overflow=""; };
+
+  close();
+  drawerBtn?.addEventListener("click",(e)=>{ e.preventDefault(); e.stopPropagation(); open(); });
+  closeBtn?.addEventListener("click",(e)=>{ e.preventDefault(); e.stopPropagation(); close(); });
+
+  overlay.addEventListener("pointerdown",(e)=>{ e.preventDefault(); e.stopPropagation(); close(); }, true);
+  drawer.addEventListener("click",(e)=>{ if(e.target.closest("a")) close(); }, true);
+  window.addEventListener("hashchange", close);
+  document.addEventListener("keydown",(e)=>{ if(e.key==="Escape") close(); });
+
+  document.addEventListener("pointerdown",(e)=>{
+    if(!drawer.classList.contains("open")) return;
+    if(e.target.closest("#drawer")) return;
+    if(e.target.closest("#drawerBtn")) return;
+    close();
+  }, true);
+}
+
+/* ========= Theme Modal ========= */
+function buildThemeModal(){
+  const grid = $("themeGrid");
+  if(!grid) return;
+
+  grid.innerHTML = THEMES.map(t=>`
+    <button class="themeSwatch" type="button" data-theme="${escapeHtml(t.id)}">
+      <div class="swTop">
+        <div class="swName">${escapeHtml(t.name)}</div>
+        <div class="swDot"></div>
+      </div>
+      <div class="swBar"></div>
+    </button>
+  `).join("");
+
+  // جعل كل بطاقة تأخذ ألوان ثيمها
+  grid.querySelectorAll(".themeSwatch").forEach(btn=>{
+    const id = btn.getAttribute("data-theme");
+    btn.addEventListener("click", ()=>{
+      setTheme(id);
+      closeThemeModal();
+    });
+  });
+}
+function openThemeModal(){
+  $("themeOverlay")?.classList.add("open");
+  $("themeModal")?.classList.add("open");
+}
+function closeThemeModal(){
+  $("themeOverlay")?.classList.remove("open");
+  $("themeModal")?.classList.remove("open");
+}
+function bindThemeUI(){
+  buildThemeModal();
+  $("themeBtn")?.addEventListener("click", openThemeModal);
+  $("closeTheme")?.addEventListener("click", closeThemeModal);
+  $("themeOverlay")?.addEventListener("pointerdown", closeThemeModal, true);
+
+  $("motionBtn")?.addEventListener("click", ()=>{
+    const cur = document.documentElement.getAttribute("data-motion") || "on";
+    setMotion(cur === "on" ? "off" : "on");
+  });
+}
+
+/* ========= Ratings (local) ========= */
+function ratingKey(videoId){ return `f90_rate_${videoId}`; }
+function getRating(videoId){
+  try{ return Number(localStorage.getItem(ratingKey(videoId)) || 0); }catch{ return 0; }
+}
+function setRating(videoId, val){
+  const v = Math.max(1, Math.min(5, Number(val||0)));
+  try{ localStorage.setItem(ratingKey(videoId), String(v)); }catch{}
+}
+function computeTopRatedText(){
+  // أعلى تقييم (لو في أي تقييمات)
+  let best = { id:null, rate:0, title:"—" };
+  state.all.forEach(t=>{
+    const r = getRating(t.id);
+    if(r > best.rate){ best = { id:t.id, rate:r, title:t.title }; }
+  });
+  if(best.rate === 0) return "—";
+  return `${best.rate}/5`;
+}
+
+/* ========= Comments (local) ========= */
+function commentsKey(videoId){ return `f90_cm_${videoId}`; }
+function loadComments(videoId){
+  try{
+    const raw = localStorage.getItem(commentsKey(videoId));
+    return raw ? JSON.parse(raw) : [];
+  }catch{ return []; }
+}
+function saveComments(videoId, arr){
+  try{ localStorage.setItem(commentsKey(videoId), JSON.stringify(arr)); }catch{}
+}
+
+/* ========= Index UI ========= */
 function updateHeader(view){
   const map = {
-    home: ["الرئيسية","آخر الإصدارات"],
-    all:  ["كل الأغاني","مجمعة من القوائم"],
-    rap:  ["الراب","قائمة الراب"],
-    sad:  ["رومنسي/حزين/طربي","القائمة الثانية"],
+    home:["الرئيسية","واجهة احترافية"],
+    all:["كل الأغاني","كل الإصدارات"],
+    rap:["الراب","قائمة الراب"],
+    sad:["رومنسي/حزين/طربي","القائمة الثانية"],
   };
   const t = map[view] || ["F90","—"];
   safeText($("viewTitle"), t[0]);
@@ -189,13 +252,14 @@ function renderGrid(list){
   }
 
   grid.innerHTML = list.map(t=>{
-    const songUrl = `song.html?v=${encodeURIComponent(t.id)}`;
+    const r = getRating(t.id);
+    const badge = r ? `<span class="badge">⭐ ${r}/5</span>` : "";
     return `
       <article class="item" data-id="${escapeHtml(t.id)}">
-        <img class="thumb" src="${escapeHtml(t.thumb)}" alt="">
+        <img class="thumb" src="${escapeHtml(t.thumb)}" alt="" loading="lazy">
         <div class="itemBody">
           <p class="itemTitle">${escapeHtml(t.title)}</p>
-          <p class="itemMeta">${escapeHtml(fmtDate(t.publishedAt))}</p>
+          <p class="itemMeta">${escapeHtml(fmtDate(t.publishedAt))} ${badge}</p>
         </div>
       </article>
     `;
@@ -204,21 +268,52 @@ function renderGrid(list){
   grid.querySelectorAll(".item").forEach(el=>{
     el.addEventListener("click", ()=>{
       const id = el.getAttribute("data-id");
-      // صفحة مستقلة لكل أغنية:
-      window.location.href = `song.html?v=${encodeURIComponent(id)}`;
+      // حفظ مرجع الرجوع
+      savePlayerState({
+        currentListName: state.currentListName,
+        currentIndex: state.currentList.findIndex(x=>x.id===id),
+        now: state.all.find(x=>x.id===id) || null,
+        isPlaying: true
+      });
+      window.location.href = `song.html?v=${encodeURIComponent(id)}&autoplay=1`;
+    });
+  });
+}
+
+function renderLatestRow(){
+  const row = $("latestRow");
+  if(!row) return;
+  const latest = state.all.slice(0,6);
+
+  row.innerHTML = latest.map(t=>`
+    <article class="rowCard" data-id="${escapeHtml(t.id)}">
+      <img class="rowThumb" src="${escapeHtml(t.thumb)}" alt="" loading="lazy">
+      <div class="rowBody">
+        <p class="rowTitle">${escapeHtml(t.title)}</p>
+        <p class="rowMeta">${escapeHtml(fmtDate(t.publishedAt))}</p>
+      </div>
+    </article>
+  `).join("");
+
+  row.querySelectorAll(".rowCard").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      const id = el.getAttribute("data-id");
+      savePlayerState({
+        currentListName: "all",
+        currentIndex: state.all.findIndex(x=>x.id===id),
+        now: state.all.find(x=>x.id===id) || null,
+        isPlaying: true
+      });
+      window.location.href = `song.html?v=${encodeURIComponent(id)}&autoplay=1`;
     });
   });
 }
 
 function setCurrentList(name){
   state.currentListName = name;
-  if(name === "rap") state.currentList = state.rap.slice();
-  else if(name === "sad") state.currentList = state.sad.slice();
+  if(name==="rap") state.currentList = state.rap.slice();
+  else if(name==="sad") state.currentList = state.sad.slice();
   else state.currentList = state.all.slice();
-
-  if(state.now){
-    state.currentIndex = state.currentList.findIndex(x=>x.id === state.now.id);
-  }
 }
 
 function applySearchSort(){
@@ -232,96 +327,58 @@ function applySearchSort(){
   if(sort === "date_asc")  list.sort((a,b)=> new Date(a.publishedAt)-new Date(b.publishedAt));
   if(sort === "title_asc") list.sort((a,b)=> a.title.localeCompare(b.title));
 
+  // الأعلى تقييماً
+  if(sort === "views_desc"){
+    list.sort((a,b)=> (getRating(b.id)||0) - (getRating(a.id)||0));
+  }
+
   renderGrid(list);
 }
 
-/* ========= Mini Player (على index.html) =========
-   التشغيل الحقيقي يتم في song.html عبر iframe.
-   هنا نخلي الأزرار تفتح الأغنية السابقة/التالية.
-*/
-function updateMini(){
-  const title = state.now?.title || "—";
-  const meta  = state.now?.publishedAt ? fmtDate(state.now.publishedAt) : "—";
-  safeText($("miniTitle"), title);
-  safeText($("miniMeta"), meta);
-  safeText($("playBtn"), state.isPlaying ? "⏸" : "▶");
-  savePlayerState();
-}
-
-function openByIndex(idx, autoplay){
-  const list = state.currentList.length ? state.currentList : state.all;
-  if(!list.length) return;
-
-  const i = (idx + list.length) % list.length;
-  state.currentIndex = i;
-  state.now = list[i];
-  state.isPlaying = !!autoplay;
-  updateMini();
-
-  // افتح صفحة الأغنية
-  const url = `song.html?v=${encodeURIComponent(state.now.id)}&autoplay=${autoplay?1:0}`;
-  window.location.href = url;
-}
-
-function playPrev(){
-  const list = state.currentList.length ? state.currentList : state.all;
-  if(!list.length) return;
-
-  if(state.currentIndex < 0 && state.now){
-    state.currentIndex = list.findIndex(x=>x.id === state.now.id);
-  }
-  if(state.currentIndex < 0) state.currentIndex = 0;
-
-  openByIndex(state.currentIndex - 1, true);
-}
-
-function playNext(){
-  const list = state.currentList.length ? state.currentList : state.all;
-  if(!list.length) return;
-
-  if(state.currentIndex < 0 && state.now){
-    state.currentIndex = list.findIndex(x=>x.id === state.now.id);
-  }
-  if(state.currentIndex < 0) state.currentIndex = 0;
-
-  openByIndex(state.currentIndex + 1, true);
-}
-
-function playToggle(){
-  // على الصفحة الرئيسية: toggle يعني "افتح الأغنية الحالية للتشغيل"
-  if(!state.now){
-    openByIndex(0, true);
-    return;
-  }
-  state.isPlaying = !state.isPlaying;
-  updateMini();
-  // افتح صفحة الأغنية بالحالة المطلوبة
-  const url = `song.html?v=${encodeURIComponent(state.now.id)}&autoplay=${state.isPlaying?1:0}`;
-  window.location.href = url;
-}
-
-/* ========= Routing (index.html) ========= */
-function route(){
+function routeIndex(){
   const h = location.hash || "#/home";
   const parts = h.replace("#/","").split("/");
   const view = parts[0] || "home";
 
   updateHeader(view);
 
-  const hero = $("hero");
+  const homePro = $("homePro");
   const toolbar = $("toolbar");
+  const backBtn = $("backBtnIndex");
 
-  if(hero) hero.style.display = (view==="home") ? "" : "none";
-  if(toolbar) toolbar.style.display = "";
+  // زر رجوع يظهر بكل الصفحات عدا home
+  if(backBtn){
+    if(view === "home") backBtn.classList.remove("show");
+    else backBtn.classList.add("show");
+  }
+
+  // هوم احترافي فقط على home
+  if(homePro) homePro.style.display = (view==="home") ? "" : "none";
+  if(toolbar) toolbar.style.display = (view==="home") ? "none" : "";
 
   if(view==="rap") setCurrentList("rap");
   else if(view==="sad") setCurrentList("sad");
   else setCurrentList("all");
 
+  if(view==="home"){
+    renderLatestRow();
+    return;
+  }
+
   applySearchSort();
 }
 
-/* ========= Bootstrap (index.html) ========= */
+/* ========= Mini Bar (index) ========= */
+function updateMini(){
+  const saved = loadPlayerState();
+  const title = saved?.now?.title || "—";
+  const meta = saved?.now?.publishedAt ? fmtDate(saved.now.publishedAt) : "—";
+  safeText($("miniTitle"), title);
+  safeText($("miniMeta"), meta);
+  safeText($("playBtn"), saved?.isPlaying ? "⏸" : "▶");
+}
+
+/* ========= Bootstrap Index ========= */
 async function bootstrapIndex(){
   const status = $("homeStatus");
   if(status) status.textContent = "جاري تحميل الأغاني...";
@@ -335,7 +392,6 @@ async function bootstrapIndex(){
     state.rap = rap.sort((a,b)=> new Date(b.publishedAt)-new Date(a.publishedAt));
     state.sad = sad.sort((a,b)=> new Date(b.publishedAt)-new Date(a.publishedAt));
 
-    // دمج كل الأغاني من القائمتين
     const m = new Map();
     [...state.rap, ...state.sad].forEach(v=>{ if(!m.has(v.id)) m.set(v.id, v); });
     state.all = Array.from(m.values()).sort((a,b)=> new Date(b.publishedAt)-new Date(a.publishedAt));
@@ -343,110 +399,190 @@ async function bootstrapIndex(){
     safeText($("totalTracks"), String(state.all.length));
     safeText($("latestTrack"), state.all[0] ? fmtDate(state.all[0].publishedAt) : "—");
     safeText($("statsMini"), `${state.all.length} أغنية`);
+
+    // أعلى تقييم في الهوم
+    safeText($("topRated"), computeTopRatedText());
+
     if(status) status.textContent = "";
 
-    // استرجاع حالة المشغل إن وجدت
-    const saved = loadPlayerState();
-    if(saved?.now?.id){
-      const found = state.all.find(x=>x.id === saved.now.id) || state.rap.find(x=>x.id===saved.now.id) || state.sad.find(x=>x.id===saved.now.id);
-      if(found){
-        state.now = found;
-        state.isPlaying = !!saved.isPlaying;
-        state.currentListName = saved.currentListName || "all";
-        setCurrentList(state.currentListName);
-        state.currentIndex = state.currentList.findIndex(x=>x.id === found.id);
-      }
-    }
-    updateMini();
-
-    // ابدأ بالروت
     if(!location.hash) location.hash = "#/home";
-    route();
+    routeIndex();
+    updateMini();
 
   }catch(err){
     console.error(err);
     if(status) status.textContent = `فشل تحميل الأغاني: ${err.message}`;
-    // خلي الشبكة فاضية برسالة
     renderGrid([]);
   }
 }
 
-/* ========= Song Page (song.html) ========= */
+/* ========= Song Page Boot ========= */
 function parseQuery(){
   const p = new URLSearchParams(location.search);
-  return {
-    id: p.get("v") || "",
-    autoplay: p.get("autoplay")==="1"
-  };
+  return { id: p.get("v") || "", autoplay: p.get("autoplay")==="1" };
+}
+
+function renderStars(videoId){
+  const stars = $("stars");
+  if(!stars) return;
+
+  const current = getRating(videoId);
+  stars.innerHTML = [1,2,3,4,5].map(n=>{
+    const active = (n <= current) ? "active" : "";
+    return `<button class="starBtn ${active}" type="button" data-v="${n}" aria-label="تقييم ${n}">★</button>`;
+  }).join("");
+
+  stars.querySelectorAll(".starBtn").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      const v = Number(b.getAttribute("data-v"));
+      setRating(videoId, v);
+      renderStars(videoId);
+      safeText($("rateHint"), `تم حفظ تقييمك: ${v}/5`);
+    });
+  });
+}
+
+function renderComments(videoId){
+  const list = $("cmList");
+  const count = $("cmCount");
+  if(!list || !count) return;
+
+  const arr = loadComments(videoId);
+  safeText(count, `${arr.length} تعليق`);
+
+  if(!arr.length){
+    list.innerHTML = `<div class="small">لا يوجد تعليقات بعد. كن أول واحد.</div>`;
+    return;
+  }
+
+  list.innerHTML = arr.slice().reverse().map((c, idxFromEnd)=>{
+    const idx = arr.length - 1 - idxFromEnd;
+    return `
+      <div class="cmItem">
+        <div class="cmTop">
+          <div>
+            <div class="cmName">${escapeHtml(c.name || "زائر")}</div>
+            <div class="cmTime">${escapeHtml(fmtDate(c.ts))}</div>
+          </div>
+          <button class="btn cmDel" type="button" data-del="${idx}">حذف</button>
+        </div>
+        <div class="cmText">${escapeHtml(c.text)}</div>
+      </div>
+    `;
+  }).join("");
+
+  list.querySelectorAll("[data-del]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const i = Number(btn.getAttribute("data-del"));
+      const arr2 = loadComments(videoId);
+      arr2.splice(i,1);
+      saveComments(videoId, arr2);
+      renderComments(videoId);
+      safeText($("cmStatus"), "تم حذف التعليق.");
+      setTimeout(()=>safeText($("cmStatus"), ""), 900);
+    });
+  });
 }
 
 function bootSongPage(){
+  injectLinks();
+
   const q = parseQuery();
   const id = q.id;
 
-  // روابط
-  injectLinks();
-
-  // زر نسخ
-  $("copyLink")?.addEventListener("click", async ()=>{
-    try{
-      await navigator.clipboard.writeText(location.href);
-      safeText($("songNote"), "تم نسخ الرابط.");
-      setTimeout(()=>safeText($("songNote"), ""), 1200);
-    }catch{}
+  // Back button
+  $("backBtnSong")?.addEventListener("click", ()=>{
+    // يرجع لقائمة كان فيها المستخدم
+    const saved = loadPlayerState();
+    const listName = saved?.currentListName || "all";
+    window.location.href = `index.html#/${listName === "all" ? "all" : listName}`;
   });
 
-  // افتح على يوتيوب
-  const ytOpen = $("ytOpen");
-  if(ytOpen) ytOpen.href = `https://www.youtube.com/watch?v=${encodeURIComponent(id)}`;
+  // title/meta from saved state (if exists)
+  const saved = loadPlayerState();
+  if(saved?.now?.id === id && saved.now){
+    safeText($("songTitle"), saved.now.title || "الأغنية");
+    safeText($("songMeta"), saved.now.publishedAt ? fmtDate(saved.now.publishedAt) : "—");
+    safeText($("miniTitle"), saved.now.title || "—");
+    safeText($("miniMeta"), saved.now.publishedAt ? fmtDate(saved.now.publishedAt) : "—");
+  } else {
+    safeText($("songTitle"), "الأغنية");
+    safeText($("songMeta"), "—");
+    safeText($("miniTitle"), "—");
+    safeText($("miniMeta"), "—");
+  }
 
-  // تشغيل iframe
+  // Play
   const frame = $("playerFrame");
   if(frame && id){
     frame.src = `https://www.youtube.com/embed/${encodeURIComponent(id)}?autoplay=${q.autoplay?1:0}&playsinline=1&rel=0`;
   }
 
-  // اقرأ حالة المشغل من التخزين لتفعيل prev/next
-  const saved = loadPlayerState();
-  if(saved?.now?.id){
-    safeText($("miniTitle"), saved.now.title || "—");
-    safeText($("miniMeta"), saved.now.publishedAt ? fmtDate(saved.now.publishedAt) : "—");
-    safeText($("playBtn"), saved.isPlaying ? "⟂⟂" : "▶");
-  } else {
-    safeText($("miniTitle"), "—");
-    safeText($("miniMeta"), "—");
-    safeText($("playBtn"), q.autoplay ? "⏸" : "▶");
-  }
+  // YouTube open
+  const ytOpen = $("ytOpen");
+  if(ytOpen) ytOpen.href = `https://www.youtube.com/watch?v=${encodeURIComponent(id)}`;
 
-  // أزرار المشغل في song.html تعتمد على حالة محفوظة وتعود لـ index لتحديد التالي/السابق
-  $("prevBtn")?.addEventListener("click", ()=>{
-    // نطلب من index فتح السابق (يعرف القوائم)
-    window.location.href = "index.html#/_prev";
+  // Copy link
+  $("copyLink")?.addEventListener("click", async ()=>{
+    try{
+      await navigator.clipboard.writeText(location.href);
+      safeText($("songNote"), "تم نسخ الرابط.");
+      setTimeout(()=>safeText($("songNote"), ""), 1000);
+    }catch{}
   });
-  $("nextBtn")?.addEventListener("click", ()=>{
-    window.location.href = "index.html#/_next";
+
+  // Rating + Comments
+  renderStars(id);
+  renderComments(id);
+
+  $("cmForm")?.addEventListener("submit", (e)=>{
+    e.preventDefault();
+    const name = ($("cmName")?.value || "").trim().slice(0,30);
+    const text = ($("cmText")?.value || "").trim().slice(0,300);
+    if(!text){
+      safeText($("cmStatus"), "اكتب تعليق قبل النشر.");
+      return;
+    }
+    const arr = loadComments(id);
+    arr.push({ name, text, ts: new Date().toISOString() });
+    saveComments(id, arr);
+    if($("cmText")) $("cmText").value = "";
+    safeText($("cmStatus"), "تم نشر التعليق.");
+    setTimeout(()=>safeText($("cmStatus"), ""), 900);
+    renderComments(id);
   });
+
+  $("cmClear")?.addEventListener("click", ()=>{
+    saveComments(id, []);
+    renderComments(id);
+    safeText($("cmStatus"), "تم مسح كل التعليقات.");
+    setTimeout(()=>safeText($("cmStatus"), ""), 900);
+  });
+
+  // Mini controls (بدون IFrame API: toggle يغيّر autoplay فقط)
   $("playBtn")?.addEventListener("click", ()=>{
     const nextAuto = q.autoplay ? 0 : 1;
+    // حفظ حالة تشغيل
+    const curSaved = loadPlayerState() || {};
+    curSaved.isPlaying = (nextAuto===1);
+    savePlayerState(curSaved);
     window.location.href = `song.html?v=${encodeURIComponent(id)}&autoplay=${nextAuto}`;
+  });
+
+  $("prevBtn")?.addEventListener("click", ()=>{
+    // رجوع للقائمة ثم "السابق" من هناك (أضمن)
+    const s = loadPlayerState();
+    const list = s?.currentListName || "all";
+    window.location.href = `index.html#/${list}`;
+  });
+  $("nextBtn")?.addEventListener("click", ()=>{
+    const s = loadPlayerState();
+    const list = s?.currentListName || "all";
+    window.location.href = `index.html#/${list}`;
   });
 }
 
-/* ========= جسر: أوامر prev/next من song.html عبر hash ========= */
-function handlePlayerBridgeHash(){
-  const h = location.hash || "";
-  if(h === "#/_prev"){
-    playPrev();
-    return true;
-  }
-  if(h === "#/_next"){
-    playNext();
-    return true;
-  }
-  return false;
-}
-
-/* ========= تشغيل تلقائي حسب الصفحة ========= */
+/* ========= Global init ========= */
 window.F90 = { bootSongPage };
 
 window.addEventListener("load", ()=>{
@@ -454,52 +590,79 @@ window.addEventListener("load", ()=>{
   const y = new Date().getFullYear();
   ["year","yearF","yearM"].forEach(id=>{ const el=$(id); if(el) el.textContent = y; });
 
-  // روابط
+  // theme + motion from storage
+  setTheme(getTheme());
+  setMotion(getMotion());
+
   injectLinks();
-
-  // Drawer
   bindDrawer();
+  bindThemeUI();
 
-  // إذا الصفحة الرئيسية
-  const isIndex = !!$("grid") && !!$("searchInput");
-  if(isIndex){
-    // أزرار
-    $("refreshBtn")?.addEventListener("click", ()=>bootstrapIndex());
-    $("shareBtn")?.addEventListener("click", async ()=>{
-      try{
-        await navigator.clipboard.writeText(location.href);
-        safeText($("homeStatus"), "تم نسخ الرابط.");
-        setTimeout(()=>safeText($("homeStatus"), ""), 1200);
-      }catch{}
-    });
+  // nav buttons
+  document.querySelectorAll("[data-navto]").forEach(b=>{
+    b.addEventListener("click", ()=>{ location.hash = b.getAttribute("data-navto"); });
+  });
 
-    document.querySelectorAll("[data-navto]").forEach(b=>{
-      b.addEventListener("click", ()=>{ location.hash = b.getAttribute("data-navto"); });
-    });
+  // back button (index)
+  $("backBtnIndex")?.addEventListener("click", ()=>{
+    history.back();
+  });
 
-    $("searchInput")?.addEventListener("input", ()=>applySearchSort());
-    $("sortSelect")?.addEventListener("change", ()=>applySearchSort());
+  // refresh/share (index)
+  $("refreshBtn")?.addEventListener("click", ()=>bootstrapIndex());
+  $("shareBtn")?.addEventListener("click", async ()=>{
+    try{
+      await navigator.clipboard.writeText(location.href);
+      safeText($("homeStatus"), "تم نسخ الرابط.");
+      setTimeout(()=>safeText($("homeStatus"), ""), 1100);
+    }catch{}
+  });
 
-    $("prevBtn")?.addEventListener("click", (e)=>{ e.stopPropagation(); playPrev(); });
-    $("nextBtn")?.addEventListener("click", (e)=>{ e.stopPropagation(); playNext(); });
-    $("playBtn")?.addEventListener("click", (e)=>{ e.stopPropagation(); playToggle(); });
+  // search/sort (index)
+  $("searchInput")?.addEventListener("input", applySearchSort);
+  $("sortSelect")?.addEventListener("change", applySearchSort);
 
-    $("mini")?.addEventListener("click", (e)=>{
-      if(e.target.closest("button")) return;
-      if(state.now){
-        window.location.href = `song.html?v=${encodeURIComponent(state.now.id)}&autoplay=${state.isPlaying?1:0}`;
-      }
-    });
+  // mini controls (index) — يفتح صفحة الأغنية الحالية
+  $("playBtn")?.addEventListener("click", ()=>{
+    const saved = loadPlayerState();
+    if(saved?.now?.id){
+      const auto = saved.isPlaying ? 0 : 1;
+      saved.isPlaying = (auto===1);
+      savePlayerState(saved);
+      window.location.href = `song.html?v=${encodeURIComponent(saved.now.id)}&autoplay=${auto}`;
+      return;
+    }
+    // إذا ما في أغنية محفوظة: افتح أحدث أغنية
+    if(state.all[0]){
+      savePlayerState({ currentListName:"all", currentIndex:0, now: state.all[0], isPlaying:true });
+      window.location.href = `song.html?v=${encodeURIComponent(state.all[0].id)}&autoplay=1`;
+    }
+  });
 
-    $("goHome")?.addEventListener("click", ()=>location.hash="#/home");
+  $("prevBtn")?.addEventListener("click", ()=>{
+    // للتبسيط: رجّع للأغنية السابقة حسب ترتيب all
+    const s = loadPlayerState();
+    if(!s?.now?.id || !state.all.length) return;
+    const idx = state.all.findIndex(x=>x.id===s.now.id);
+    const prev = state.all[(idx - 1 + state.all.length) % state.all.length];
+    savePlayerState({ currentListName:"all", currentIndex: idx-1, now: prev, isPlaying:true });
+    window.location.href = `song.html?v=${encodeURIComponent(prev.id)}&autoplay=1`;
+  });
 
-    window.addEventListener("hashchange", ()=>{
-      // bridge commands
-      if(handlePlayerBridgeHash()) return;
-      route();
-    });
+  $("nextBtn")?.addEventListener("click", ()=>{
+    const s = loadPlayerState();
+    if(!s?.now?.id || !state.all.length) return;
+    const idx = state.all.findIndex(x=>x.id===s.now.id);
+    const next = state.all[(idx + 1) % state.all.length];
+    savePlayerState({ currentListName:"all", currentIndex: idx+1, now: next, isPlaying:true });
+    window.location.href = `song.html?v=${encodeURIComponent(next.id)}&autoplay=1`;
+  });
 
-    // ابدأ
+  // routing (index)
+  window.addEventListener("hashchange", routeIndex);
+
+  // لو هذه صفحة index (وجود grid + homePro)
+  if($("grid") && $("homePro")){
     bootstrapIndex();
   }
 });

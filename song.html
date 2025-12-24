@@ -3,49 +3,62 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>أغنية | F90</title>
-  <meta name="description" content="صفحة أغنية وتشغيل مباشر من يوتيوب." />
-  <meta name="theme-color" content="#0b0d12">
+  <title>الأغاني | F90</title>
+  <meta name="theme-color" content="#05070F">
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="container header">
-    <div class="brand">
-      <div class="logo">F90</div>
-      <div class="brandText">
-        <div class="title" data-i18n="siteTitleAr">اف تسعين للإنتاج الفني</div>
-        <div class="subtitle" data-i18n="siteTitleEn">F90 For Artistic Production</div>
-      </div>
-    </div>
+  <div class="bgFX"></div>
 
-    <div class="actions">
-      <button id="langBtn" class="btn ghost" type="button">AR / EN</button>
-      <a class="btn ghost" href="index.html" data-i18n="backBtn">رجوع</a>
-      <a class="btn" id="ytLink" target="_blank" rel="noopener">YouTube</a>
+  <header class="header">
+    <div class="container">
+      <div class="brand">
+        <div class="logo">F90</div>
+        <div class="brandText">
+          <div class="brandTitle">اف تسعين للإنتاج الفني</div>
+          <div class="brandSub">Library</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <a data-nav="index.html" href="index.html">الرئيسية</a>
+        <a data-nav="songs.html" href="songs.html">الأغاني</a>
+      </nav>
+
+      <div class="actions">
+        <a class="btn primary" data-link="youtube" target="_blank" rel="noopener">YouTube</a>
+        <a class="btn" data-link="whatsapp" target="_blank" rel="noopener">WhatsApp</a>
+      </div>
     </div>
   </header>
 
   <main class="container">
     <section class="section">
-      <h1 id="title">...</h1>
-      <p id="meta" class="muted"></p>
-
-      <div class="card">
-        <iframe id="player"
-          title="F90 Player"
-          loading="lazy"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowfullscreen></iframe>
+      <div class="sectionHead">
+        <h2>كل الأغاني</h2>
+        <div class="pill" id="count">Results: -</div>
       </div>
 
-      <div class="card pad">
-        <h3 style="margin-top:0" data-i18n="descTitle">وصف</h3>
-        <p id="desc" class="muted" style="white-space:pre-wrap"></p>
+      <div class="toolbar">
+        <input id="q" class="input" placeholder="ابحث باسم الأغنية..." />
+        <select id="order" class="select">
+          <option value="date_desc">الأحدث أولاً</option>
+          <option value="date_asc">الأقدم أولاً</option>
+          <option value="title_asc">العنوان A-Z</option>
+        </select>
       </div>
+
+      <div id="status" class="small"></div>
+      <div id="grid" class="grid"></div>
     </section>
 
     <footer class="footer">
-      <span>© <span id="year"></span> F90</span>
+      <div class="copy">حقوق الطبع والنشر محفوظة © <span id="year"></span> F90</div>
+      <div class="footerLinks">
+        <a data-link="youtube" target="_blank" rel="noopener">YouTube</a>
+        <a data-link="insta" target="_blank" rel="noopener">Instagram</a>
+        <a data-link="tiktok" target="_blank" rel="noopener">TikTok</a>
+      </div>
     </footer>
   </main>
 

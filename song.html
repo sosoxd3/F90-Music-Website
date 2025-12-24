@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#05070F">
   <title>الأغنية | F90 Music</title>
-  <link rel="stylesheet" href="styles.css?v=5" />
+
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css?v=6" />
 </head>
 <body>
 
@@ -25,7 +27,8 @@
       </a>
 
       <div class="topActions">
-        <!-- Phase 1 toggles -->
+        <button class="btn pill" id="installBtn" type="button" style="display:none">تثبيت</button>
+
         <button class="btn pill" id="modeBtn" type="button" title="ليلي/نهاري">نهاري</button>
         <button class="btn pill" id="contrastBtn" type="button" title="تباين عالي">تباين</button>
 
@@ -47,7 +50,6 @@
     <div class="small modalHint">يتم حفظ اختيارك تلقائياً.</div>
   </section>
 
-  <!-- زر رجوع ثابت داخل الصفحة -->
   <button class="backBtn showAlways" id="backBtnSong" type="button" title="رجوع">⟵ رجوع</button>
 
   <main class="wrap songPage">
@@ -67,14 +69,12 @@
       </div>
 
       <div class="playerBox">
-        <!-- بدل iframe: YouTube IFrame API Player -->
         <div class="ytBox">
           <div id="ytPlayer"></div>
         </div>
         <div class="small" id="resumeHint"></div>
       </div>
 
-      <!-- تقييم -->
       <section class="rateCard">
         <div class="rateHead">
           <div class="rateTitle">قيّم الأغنية</div>
@@ -83,7 +83,6 @@
         <div class="stars" id="stars"></div>
       </section>
 
-      <!-- تعليقات داخل الموقع -->
       <section class="commentsCard">
         <div class="commentsHead">
           <div class="commentsTitle">تعليقات داخل الموقع</div>
@@ -103,7 +102,6 @@
         <div class="cmList" id="cmList"></div>
       </section>
 
-      <!-- مقترحات -->
       <section class="suggestCard">
         <div class="suggestHead">
           <div class="suggestTitle">أغاني مقترحة</div>
@@ -116,7 +114,6 @@
     </div>
   </main>
 
-  <!-- Mini Bar (controls real player) -->
   <section class="mini" id="mini">
     <div class="miniLeft">
       <div class="miniTitle" id="miniTitle">—</div>
@@ -143,7 +140,7 @@
     </div>
   </section>
 
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=6"></script>
   <script>
     window.addEventListener("load", ()=>{
       if (window.F90 && typeof window.F90.bootSongPage === "function") {
@@ -152,4 +149,4 @@
     });
   </script>
 </body>
-</html>
+  </html>

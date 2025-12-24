@@ -7,6 +7,7 @@
   <title>اف تسعين للإنتاج الفني | F90 Music</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
+
 <body>
   <div class="bgFX"></div>
 
@@ -32,10 +33,11 @@
 
   <!-- Drawer -->
   <div class="drawerOverlay" id="drawerOverlay"></div>
-  <aside class="drawer" id="drawer">
+
+  <aside class="drawer" id="drawer" aria-label="القائمة الجانبية">
     <div class="sideTop">
       <div class="pill">القائمة</div>
-      <button class="btn pill" id="closeDrawer" type="button">✕</button>
+      <button class="btn pill" id="closeDrawer" type="button" aria-label="إغلاق">✕</button>
     </div>
 
     <nav class="sideNav">
@@ -111,7 +113,6 @@
         </div>
       </div>
 
-      <!-- Hero -->
       <section class="hero" id="hero">
         <div class="heroInner">
           <div class="pill">F90 • Music</div>
@@ -119,15 +120,10 @@
           <p class="heroDesc">كل الأغاني الجديدة تظهر تلقائياً، وتصنيف منظم، وتحكم كامل من الشريط السفلي.</p>
 
           <div class="heroBtns">
-            <button class="btn primary" data-navto="#/all">كل الأغاني</button>
-            <button class="btn" data-navto="#/rap">الراب</button>
-            <button class="btn" data-navto="#/sad">رومنسي/حزين/طربي</button>
-            <button class="btn pill" data-navto="#/live">لايف</button>
-          </div>
-
-          <div class="eq" aria-hidden="true">
-            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
-            <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            <button class="btn primary" data-navto="#/all" type="button">كل الأغاني</button>
+            <button class="btn" data-navto="#/rap" type="button">الراب</button>
+            <button class="btn" data-navto="#/sad" type="button">رومنسي/حزين/طربي</button>
+            <button class="btn pill" data-navto="#/live" type="button">لايف</button>
           </div>
 
           <div class="heroStats">
@@ -149,7 +145,6 @@
         </div>
       </section>
 
-      <!-- Toolbar -->
       <section class="toolbar" id="toolbar">
         <input class="input" id="searchInput" placeholder="ابحث باسم الأغنية..." />
         <select class="select" id="sortSelect">
@@ -160,10 +155,8 @@
         </select>
       </section>
 
-      <!-- Grid -->
       <section class="grid" id="grid"></section>
 
-      <!-- صفحة الأغنية (تعرض الفيديو بحجم كبير) -->
       <section class="panel" id="panelSong">
         <div class="panelHead">
           <div>
@@ -187,12 +180,10 @@
     </section>
   </main>
 
-  <!-- مشغل ثابت (خلفي صغير جدا) -->
   <div class="hiddenPlayer">
     <div id="playerMini"></div>
   </div>
 
-  <!-- Mini Player Bar (ثابت بكل الصفحات) -->
   <section class="mini" id="mini">
     <div class="miniLeft">
       <div class="miniTitle" id="miniTitle">—</div>
@@ -208,4 +199,4 @@
 
   <script src="app.js"></script>
 </body>
-</html>
+  </html>

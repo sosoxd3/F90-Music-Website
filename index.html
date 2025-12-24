@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#05070F">
   <title>اف تسعين للإنتاج الفني | F90 Music</title>
-  <link rel="stylesheet" href="styles.css?v=2" />
+  <link rel="stylesheet" href="styles.css?v=3" />
 </head>
 <body>
 
@@ -58,6 +58,7 @@
       <a href="#/all">كل الأغاني</a>
       <a href="#/rap">الراب</a>
       <a href="#/sad">رومنسي/حزين/طربي</a>
+      <a href="#/fav">مفضلتي</a>
     </nav>
 
     <div class="sideCard">
@@ -88,6 +89,7 @@
         <a href="#/all">كل الأغاني</a>
         <a href="#/rap">الراب</a>
         <a href="#/sad">رومنسي/حزين/طربي</a>
+        <a href="#/fav">مفضلتي</a>
       </nav>
 
       <div class="sideCard">
@@ -127,7 +129,7 @@
       <!-- زر رجوع داخل الصفحات (مش بالهوم) -->
       <button class="backBtn" id="backBtnIndex" type="button" title="رجوع">⟵ رجوع</button>
 
-      <!-- Home (احترافي) -->
+      <!-- Home Pro -->
       <section class="homePro" id="homePro">
         <section class="heroPro">
           <div class="heroGlow"></div>
@@ -140,6 +142,7 @@
               <button class="btn primary" data-navto="#/all" type="button">كل الأغاني</button>
               <button class="btn" data-navto="#/rap" type="button">الراب</button>
               <button class="btn" data-navto="#/sad" type="button">رومنسي/حزين/طربي</button>
+              <button class="btn pill" data-navto="#/fav" type="button">مفضلتي</button>
             </div>
 
             <div class="heroStats">
@@ -186,10 +189,10 @@
             <div class="catTitle">رومنسي/حزين/طربي</div>
             <div class="small">إحساس • صوت • لحن</div>
           </button>
-          <button class="catCard" data-navto="#/all" type="button">
-            <div class="catIcon">🔥</div>
-            <div class="catTitle">كل الأغاني</div>
-            <div class="small">كل شيء بمكان واحد</div>
+          <button class="catCard" data-navto="#/fav" type="button">
+            <div class="catIcon">⭐</div>
+            <div class="catTitle">مفضلتي</div>
+            <div class="small">أفضل أغانيك</div>
           </button>
         </section>
       </section>
@@ -200,7 +203,7 @@
         <select class="select" id="sortSelect">
           <option value="date_desc">الأحدث</option>
           <option value="date_asc">الأقدم</option>
-          <option value="views_desc">الأعلى تقييماً</option>
+          <option value="rating_desc">الأعلى تقييماً</option>
           <option value="title_asc">A-Z</option>
         </select>
       </section>
@@ -228,6 +231,6 @@
     </div>
   </section>
 
-  <script src="app.js?v=2"></script>
+  <script src="app.js?v=3"></script>
 </body>
-  </html>
+            </html>

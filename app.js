@@ -1,4 +1,5 @@
-// ===== F90 MUSIC - Arabic Only - FINAL app.js (Drawer fixed + Stable Player + Prev/Play/Pause/Next) =====
+// ===== F90 MUSIC - Arabic Only - FINAL app.js (FORCE Drawer Close + Stable Player + Prev/Play/Pause/Next) =====
+// ضع مفتاحك هنا:
 const YT_API_KEY = "AIzaSyD3mvCx80XsvwrURRg2RwaD8HmOKqhYkek";
 const YT_HANDLE  = "F90-Music";
 
@@ -35,11 +36,11 @@ const state = {
   stats:new Map(),
   now:null,
 
-  // player
   ytReady:false,
   playerMini:null,
   playerBig:null,
   isPlaying:false,
+
   currentListName:"all",
   currentList:[],
   currentIndex:-1,
@@ -118,7 +119,7 @@ async function fetchRSS(channelId){
   }).filter(x=>x.id);
 }
 
-// ---------------- Drawer (FIXED) ----------------
+// ---------------- Drawer (FORCE FIX) ----------------
 function bindDrawer(){
   const drawerBtn = $("drawerBtn");
   const drawer = $("drawer");
@@ -127,37 +128,68 @@ function bindDrawer(){
 
   if(!drawer || !overlay) return;
 
-  const close = ()=>{
+  const setClosed = ()=>{
     drawer.classList.remove("open");
     overlay.classList.remove("open");
+
+    // RTL drawer on right
+    drawer.style.transform = "translateX(105%)";
+    drawer.style.visibility = "hidden";
+    drawer.style.pointerEvents = "none";
+
+    overlay.style.opacity = "0";
+    overlay.style.pointerEvents = "none";
   };
-  const open = ()=>{
+
+  const setOpen = ()=>{
     drawer.classList.add("open");
     overlay.classList.add("open");
+
+    drawer.style.transform = "translateX(0)";
+    drawer.style.visibility = "visible";
+    drawer.style.pointerEvents = "auto";
+
+    overlay.style.opacity = "1";
+    overlay.style.pointerEvents = "auto";
   };
 
-  drawerBtn?.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); open(); });
-  closeBtn?.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); close(); });
-  overlay.addEventListener("click", (e)=>{ e.preventDefault(); e.stopPropagation(); close(); });
+  // close immediately (fix open on load)
+  setClosed();
 
-  // close on any link click in drawer
-  drawer.addEventListener("click", (e)=>{
-    if(e.target.closest("a")) close();
-  });
+  drawerBtn?.addEventListener("click", (e)=>{
+    e.preventDefault(); e.stopPropagation();
+    setOpen();
+  }, {capture:true});
 
-  // close on hash change
-  window.addEventListener("hashchange", close);
+  closeBtn?.addEventListener("click", (e)=>{
+    e.preventDefault(); e.stopPropagation();
+    setClosed();
+  }, {capture:true});
 
-  // close on outside click (capture)
-  document.addEventListener("click", (e)=>{
-    if(!drawer.classList.contains("open")) return;
+  overlay.addEventListener("pointerdown", (e)=>{
+    e.preventDefault(); e.stopPropagation();
+    setClosed();
+  }, {capture:true});
+
+  drawer.addEventListener("pointerdown", (e)=>{
+    if(e.target.closest("a")) setClosed();
+  }, {capture:true});
+
+  window.addEventListener("hashchange", ()=>setClosed());
+
+  document.addEventListener("pointerdown", (e)=>{
+    if(drawer.style.visibility !== "visible") return;
     if(e.target.closest("#drawer")) return;
     if(e.target.closest("#drawerBtn")) return;
-    close();
-  }, true);
+    setClosed();
+  }, {capture:true});
 
-  // ensure closed after binding
-  close();
+  document.addEventListener("keydown", (e)=>{
+    if(e.key === "Escape") setClosed();
+  });
+
+  // final ensure
+  setClosed();
 }
 
 // ---------------- UI Render ----------------
@@ -209,6 +241,7 @@ function updateHeader(view){
 function applySearchSort(){
   const q = ($("searchInput")?.value || "").trim().toLowerCase();
   const sort = $("sortSelect")?.value || "date_desc";
+
   let list = (state.currentListName==="rap") ? state.rap.slice()
           : (state.currentListName==="sad") ? state.sad.slice()
           : state.all.slice();
@@ -314,10 +347,12 @@ function openTrack(videoId, autoplay){
          || { id: videoId, title:"الأغنية", publishedAt:new Date().toISOString(), thumb:`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` };
 
   state.now = t;
+
   setText("miniTitle", t.title);
   setText("miniMeta", fmtDate(t.publishedAt));
   setText("songTitle", t.title);
   setText("songMeta", fmtDate(t.publishedAt));
+
   const ytBtn = $("ytBtn");
   if(ytBtn) ytBtn.href = `https://www.youtube.com/watch?v=${encodeURIComponent(t.id)}`;
 
@@ -473,18 +508,16 @@ function route(){
 }
 
 window.addEventListener("load", async ()=>{
-  // ---- FORCE drawer closed on first paint (fix "opens by itself") ----
+  // FORCE closed before anything else
   $("drawer")?.classList.remove("open");
   $("drawerOverlay")?.classList.remove("open");
 
-  // year
   const y = new Date().getFullYear();
   ["year","yearF","yearM"].forEach(id=>{ const el=$(id); if(el) el.textContent = y; });
 
   injectLinks();
   bindDrawer();
 
-  // theme/motion
   $("themeBtn")?.addEventListener("click", ()=>{
     const cur = document.documentElement.getAttribute("data-theme") || "neon";
     const next = (cur==="neon") ? "cyan" : (cur==="cyan") ? "pink" : "neon";
@@ -495,12 +528,10 @@ window.addEventListener("load", async ()=>{
     document.documentElement.setAttribute("data-motion", cur==="off" ? "on" : "off");
   });
 
-  // nav buttons
   document.querySelectorAll("[data-navto]").forEach(b=>{
     b.addEventListener("click", ()=>{ location.hash = b.getAttribute("data-navto"); });
   });
 
-  // actions
   $("refreshBtn")?.addEventListener("click", ()=>bootstrap());
   $("shareBtn")?.addEventListener("click", async ()=>{
     try{
@@ -510,32 +541,24 @@ window.addEventListener("load", async ()=>{
     }catch{}
   });
 
-  // search/sort
   $("searchInput")?.addEventListener("input", ()=>applySearchSort());
   $("sortSelect")?.addEventListener("change", ()=>applySearchSort());
 
-  // player controls
   $("prevBtn")?.addEventListener("click", (e)=>{ e.stopPropagation(); playPrev(); });
   $("nextBtn")?.addEventListener("click", (e)=>{ e.stopPropagation(); playNext(); });
   $("playBtn")?.addEventListener("click", (e)=>{ e.stopPropagation(); playToggle(); });
 
-  // clicking mini opens track page
   $("mini")?.addEventListener("click", (e)=>{
     if(e.target.closest("button")) return;
     if(state.now) location.hash = `#/track/${encodeURIComponent(state.now.id)}`;
   });
 
-  // home click
   $("goHome")?.addEventListener("click", ()=>location.hash="#/home");
-
-  // route changes
   window.addEventListener("hashchange", ()=>route());
 
-  // load YT iframe API and create players
   await loadYTApi();
   createPlayers();
 
-  // bootstrap
   bootstrap();
 });
 ```0

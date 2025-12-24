@@ -1,26 +1,22 @@
 <!doctype html>
-<html lang="ar" dir="rtl" data-theme="neon" data-mode="night" data-contrast="normal">
+<html lang="ar" dir="rtl" data-theme="neon" data-motion="on" data-mode="night" data-contrast="normal">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#05070F">
   <title>اف تسعين للإنتاج الفني | F90 Music</title>
 
-  <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles.css?v=6" />
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-
   <div class="bgFX"></div>
 
   <!-- Topbar -->
   <header class="topbar">
-    <div class="wrap topbarInner">
+    <div class="wrap">
       <div class="brand" id="goHome" role="button" tabindex="0">
-        <div class="logoWrap" aria-hidden="true">
-          <div class="logo">F90</div>
-          <div class="headphones"></div>
-        </div>
+        <div class="logo logoSpin">F90</div>
         <div class="brandTxt">
           <div class="brandTitle">اف تسعين للإنتاج الفني</div>
           <div class="brandSub">F90 Music — Official</div>
@@ -29,31 +25,14 @@
 
       <div class="topActions">
         <button class="btn pill mobileOnly" id="drawerBtn" type="button" aria-label="menu">☰</button>
-
-        <!-- PWA Install -->
-        <button class="btn pill" id="installBtn" type="button" style="display:none">تثبيت</button>
-
-        <!-- Phase 1 toggles -->
-        <button class="btn pill" id="modeBtn" type="button" title="ليلي/نهاري">نهاري</button>
-        <button class="btn pill" id="contrastBtn" type="button" title="تباين عالي">تباين</button>
-
-        <button class="btn pill" id="themeBtn" type="button" title="تغيير اللون">ألوان</button>
-        <button class="btn pill" id="motionBtn" type="button" title="تشغيل/إيقاف الحركة">حركة</button>
+        <button class="btn pill" id="themeBtn" type="button">الثيمات</button>
+        <button class="btn pill" id="motionBtn" type="button">حركة</button>
+        <button class="btn pill" id="modeBtn" type="button">نهاري</button>
+        <button class="btn pill" id="contrastBtn" type="button">تباين</button>
         <a class="btn primary" data-link="youtube" target="_blank" rel="noopener">قناة يوتيوب</a>
       </div>
     </div>
   </header>
-
-  <!-- Theme Panel -->
-  <div class="modalOverlay" id="themeOverlay"></div>
-  <section class="modal" id="themeModal" aria-label="الثيمات">
-    <div class="modalHead">
-      <div class="pill">الثيمات (7)</div>
-      <button class="btn pill" id="closeTheme" type="button">✕</button>
-    </div>
-    <div class="themeGrid" id="themeGrid"></div>
-    <div class="small modalHint">يتم حفظ اختيارك تلقائياً.</div>
-  </section>
 
   <!-- Drawer -->
   <div class="drawerOverlay" id="drawerOverlay"></div>
@@ -67,9 +46,9 @@
       <a href="#/home">الرئيسية</a>
       <a href="#/all">كل الأغاني</a>
       <a href="#/top">أفضل الأغاني</a>
+      <a href="#/fav">مفضلتي</a>
       <a href="#/rap">الراب</a>
       <a href="#/sad">رومنسي/حزين/طربي</a>
-      <a href="#/fav">مفضلتي</a>
     </nav>
 
     <div class="sideCard">
@@ -83,7 +62,7 @@
     </div>
 
     <div class="sideFoot">
-      <div class="small">© <span id="yearM"></span> F90</div>
+      <div class="small">حقوق الطبع والنشر محفوظة © <span id="yearM"></span> F90</div>
     </div>
   </aside>
 
@@ -99,9 +78,9 @@
         <a href="#/home">الرئيسية</a>
         <a href="#/all">كل الأغاني</a>
         <a href="#/top">أفضل الأغاني</a>
+        <a href="#/fav">مفضلتي</a>
         <a href="#/rap">الراب</a>
         <a href="#/sad">رومنسي/حزين/طربي</a>
-        <a href="#/fav">مفضلتي</a>
       </nav>
 
       <div class="sideCard">
@@ -133,29 +112,26 @@
           <div class="small" id="viewSubtitle">—</div>
         </div>
         <div class="vhRight">
+          <button class="btn" id="backBtnIndex" type="button">رجوع</button>
           <button class="btn" id="refreshBtn" type="button">تحديث</button>
           <button class="btn" id="shareBtn" type="button">نسخ رابط</button>
         </div>
       </div>
 
-      <!-- زر رجوع داخل الصفحات (مش بالهوم) -->
-      <button class="backBtn" id="backBtnIndex" type="button" title="رجوع">⟵ رجوع</button>
-
-      <!-- Home Pro -->
+      <!-- Home Pro (9) -->
       <section class="homePro" id="homePro">
-        <section class="heroPro">
-          <div class="heroGlow"></div>
-          <div class="heroProInner">
+        <div class="heroPro">
+          <div class="heroProLeft">
             <div class="pill">F90 • Music</div>
-            <h2 class="heroTitle">أغاني F90 — تشغيل سريع وتصنيف منظم</h2>
-            <p class="heroDesc">كل جديد يظهر تلقائياً — وقيّم الأغاني داخل الموقع.</p>
+            <h2 class="heroTitle">اف تسعين للإنتاج الفني</h2>
+            <p class="heroDesc">
+              كل الأغاني تظهر تلقائياً داخل الموقع، لكل أغنية صفحة تشغيل خاصة، مع تقييم وتعليقات داخل الموقع.
+            </p>
 
             <div class="heroBtns">
-              <button class="btn primary" data-navto="#/all" type="button">كل الأغاني</button>
-              <button class="btn" data-navto="#/top" type="button">أفضل الأغاني</button>
-              <button class="btn" data-navto="#/rap" type="button">الراب</button>
-              <button class="btn" data-navto="#/sad" type="button">رومنسي/حزين/طربي</button>
-              <button class="btn pill" data-navto="#/fav" type="button">مفضلتي</button>
+              <button class="btn primary" data-navto="#/all">ادخل كل الأغاني</button>
+              <button class="btn" data-navto="#/top">أفضل الأغاني</button>
+              <button class="btn pill" data-navto="#/fav">مفضلتي</button>
             </div>
 
             <div class="heroStats">
@@ -169,29 +145,24 @@
               </div>
               <div class="stat">
                 <div class="statNum" id="topRated">—</div>
-                <div class="statLbl">أعلى تقييم</div>
+                <div class="statLbl">أفضل تقييم</div>
               </div>
-            </div>
-
-            <div class="eqPro" aria-hidden="true">
-              <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
             </div>
 
             <div class="small" id="homeStatus"></div>
           </div>
-        </section>
 
-        <section class="sectionHead">
-          <h3>أحدث الإصدارات</h3>
-          <div class="small">آخر ما نزل</div>
-        </section>
-        <section class="row" id="latestRow"></section>
-
-        <section class="sectionHead">
-          <h3>الأعلى تقييماً</h3>
-          <div class="small">حسب تقييم الموقع</div>
-        </section>
-        <section class="row" id="topRow"></section>
+          <div class="heroProRight">
+            <div class="visualEq" aria-hidden="true">
+              <div class="vbar"></div><div class="vbar"></div><div class="vbar"></div><div class="vbar"></div>
+              <div class="vbar"></div><div class="vbar"></div><div class="vbar"></div><div class="vbar"></div>
+            </div>
+            <div class="miniCard">
+              <div class="miniCardTitle">أحدث الإصدارات</div>
+              <div class="latestRow" id="latestRow"></div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <!-- Toolbar -->
@@ -200,8 +171,8 @@
         <select class="select" id="sortSelect">
           <option value="date_desc">الأحدث</option>
           <option value="date_asc">الأقدم</option>
-          <option value="rating_desc">الأعلى تقييماً</option>
           <option value="title_asc">A-Z</option>
+          <option value="rating_desc">الأعلى تقييماً</option>
         </select>
       </section>
 
@@ -221,26 +192,24 @@
       <div class="miniMeta" id="miniMeta">—</div>
     </div>
 
-    <div class="miniMid">
-      <div class="miniBtns">
-        <button class="btn pill" id="prevBtn" type="button" title="السابق">⟵</button>
-        <button class="btn primary pill" id="playBtn" type="button" title="تشغيل/إيقاف">▶</button>
-        <button class="btn pill" id="nextBtn" type="button" title="التالي">⟶</button>
-      </div>
-      <div class="miniToggles">
-        <button class="btn pill" id="shuffleBtn" type="button" title="Shuffle">🔀</button>
-        <button class="btn pill" id="repeatBtn" type="button" title="Repeat">🔁</button>
-      </div>
-    </div>
-
-    <div class="miniRight">
-      <label class="volWrap" title="الصوت">
-        <span class="volIco">🔊</span>
-        <input id="volRange" class="volRange" type="range" min="0" max="100" step="1" value="70">
-      </label>
+    <div class="miniBtns">
+      <button class="btn pill" id="prevBtn" type="button" title="السابق">⟵</button>
+      <button class="btn primary pill" id="playBtn" type="button" title="تشغيل">▶</button>
+      <button class="btn pill" id="nextBtn" type="button" title="التالي">⟶</button>
     </div>
   </section>
 
-  <script src="app.js?v=6"></script>
+  <!-- Theme Modal -->
+  <div class="themeOverlay" id="themeOverlay"></div>
+  <div class="themeModal" id="themeModal" role="dialog" aria-modal="true" aria-label="الثيمات">
+    <div class="themeHead">
+      <div class="pill">الثيمات</div>
+      <button class="btn pill" id="closeTheme" type="button">✕</button>
+    </div>
+    <div class="themeGrid" id="themeGrid"></div>
+    <div class="small themeHint">اختر ثيم من 7 ثيمات. يتم الحفظ تلقائياً.</div>
+  </div>
+
+  <script src="app.js"></script>
 </body>
-  </html>
+</html>

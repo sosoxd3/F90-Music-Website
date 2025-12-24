@@ -7,7 +7,6 @@
   <title>اف تسعين للإنتاج الفني | F90 Music</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
-
 <body>
   <div class="bgFX"></div>
 
@@ -31,13 +30,12 @@
     </div>
   </header>
 
-  <!-- Drawer Overlay + Drawer (مهم: بدون open هنا نهائيًا) -->
+  <!-- Drawer -->
   <div class="drawerOverlay" id="drawerOverlay"></div>
-
-  <aside class="drawer" id="drawer" aria-label="القائمة الجانبية">
+  <aside class="drawer" id="drawer">
     <div class="sideTop">
       <div class="pill">القائمة</div>
-      <button class="btn pill" id="closeDrawer" type="button" aria-label="إغلاق">✕</button>
+      <button class="btn pill" id="closeDrawer" type="button">✕</button>
     </div>
 
     <nav class="sideNav">
@@ -121,10 +119,10 @@
           <p class="heroDesc">كل الأغاني الجديدة تظهر تلقائياً، وتصنيف منظم، وتحكم كامل من الشريط السفلي.</p>
 
           <div class="heroBtns">
-            <button class="btn primary" data-navto="#/all" type="button">كل الأغاني</button>
-            <button class="btn" data-navto="#/rap" type="button">الراب</button>
-            <button class="btn" data-navto="#/sad" type="button">رومنسي/حزين/طربي</button>
-            <button class="btn pill" data-navto="#/live" type="button">لايف</button>
+            <button class="btn primary" data-navto="#/all">كل الأغاني</button>
+            <button class="btn" data-navto="#/rap">الراب</button>
+            <button class="btn" data-navto="#/sad">رومنسي/حزين/طربي</button>
+            <button class="btn pill" data-navto="#/live">لايف</button>
           </div>
 
           <div class="eq" aria-hidden="true">
@@ -165,7 +163,7 @@
       <!-- Grid -->
       <section class="grid" id="grid"></section>
 
-      <!-- Song page -->
+      <!-- صفحة الأغنية (تعرض الفيديو بحجم كبير) -->
       <section class="panel" id="panelSong">
         <div class="panelHead">
           <div>
@@ -189,12 +187,12 @@
     </section>
   </main>
 
-  <!-- Hidden mini player -->
+  <!-- مشغل ثابت (خلفي صغير جدا) -->
   <div class="hiddenPlayer">
     <div id="playerMini"></div>
   </div>
 
-  <!-- Fixed Mini Player Bar -->
+  <!-- Mini Player Bar (ثابت بكل الصفحات) -->
   <section class="mini" id="mini">
     <div class="miniLeft">
       <div class="miniTitle" id="miniTitle">—</div>
@@ -208,93 +206,6 @@
     </div>
   </section>
 
-  <!-- Main JS -->
-  <script src="app.js"></script>
-
-  <!-- Drawer Patch (مضمون: يقفل/يفتح حتى لو CSS/JS متعارض) -->
-  <script>
-  (function(){
-    const drawer = document.getElementById("drawer") || document.querySelector(".drawer");
-    const overlay = document.getElementById("drawerOverlay") || document.querySelector(".drawerOverlay");
-    const btn = document.getElementById("drawerBtn") || document.querySelector("button[aria-label='menu']");
-    const closeBtn = document.getElementById("closeDrawer");
-
-    if(!drawer || !overlay) return;
-
-    // Ensure on top + clickable
-    drawer.style.zIndex = "99999";
-    overlay.style.zIndex = "99998";
-
-    overlay.style.position = "fixed";
-    overlay.style.inset = "0";
-    overlay.style.background = "rgba(0,0,0,.55)";
-    overlay.style.backdropFilter = "blur(4px)";
-    overlay.style.transition = "opacity .15s ease";
-
-    drawer.style.position = "fixed";
-    drawer.style.top = "0";
-    drawer.style.bottom = "0";
-    drawer.style.insetInlineEnd = "0";
-    drawer.style.width = drawer.style.width || "330px";
-    drawer.style.maxWidth = drawer.style.maxWidth || "86vw";
-    drawer.style.transition = "transform .15s ease";
-
-    function close(){
-      drawer.classList.remove("open");
-      overlay.classList.remove("open");
-      drawer.style.transform = "translateX(105%)";
-      drawer.style.visibility = "hidden";
-      drawer.style.pointerEvents = "none";
-      overlay.style.opacity = "0";
-      overlay.style.pointerEvents = "none";
-    }
-
-    function open(){
-      drawer.classList.add("open");
-      overlay.classList.add("open");
-      drawer.style.transform = "translateX(0)";
-      drawer.style.visibility = "visible";
-      drawer.style.pointerEvents = "auto";
-      overlay.style.opacity = "1";
-      overlay.style.pointerEvents = "auto";
-    }
-
-    // Close immediately on load
-    close();
-
-    const onOpen = (e)=>{ e.preventDefault(); e.stopPropagation(); open(); };
-    const onClose = (e)=>{ e.preventDefault(); e.stopPropagation(); close(); };
-
-    if(btn){
-      btn.addEventListener("pointerdown", onOpen, true);
-      btn.addEventListener("click", onOpen, true);
-      btn.addEventListener("touchstart", onOpen, {passive:false, capture:true});
-    }
-    if(closeBtn){
-      closeBtn.addEventListener("pointerdown", onClose, true);
-      closeBtn.addEventListener("click", onClose, true);
-      closeBtn.addEventListener("touchstart", onClose, {passive:false, capture:true});
-    }
-
-    overlay.addEventListener("pointerdown", onClose, true);
-    overlay.addEventListener("click", onClose, true);
-    overlay.addEventListener("touchstart", onClose, {passive:false, capture:true});
-
-    drawer.addEventListener("pointerdown", (e)=>{
-      if(e.target.closest("a")) close();
-    }, true);
-
-    window.addEventListener("hashchange", close);
-    document.addEventListener("keydown", (e)=>{ if(e.key === "Escape") close(); });
-
-    document.addEventListener("pointerdown", (e)=>{
-      if(overlay.style.pointerEvents !== "auto") return;
-      if(e.target.closest("#drawer")) return;
-      if(btn && e.target.closest("#drawerBtn")) return;
-      close();
-    }, true);
-  })();
-  </script>
+  <script src="app.v2.js"></script>
 </body>
-</html>
-```0
+  hthtml>

@@ -1,19 +1,24 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" data-theme="neon">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#05070F">
   <title>اف تسعين للإنتاج الفني | F90 Music</title>
-  <link rel="stylesheet" href="styles.css?v=1" />
+  <link rel="stylesheet" href="styles.css?v=2" />
 </head>
 <body>
+
+  <div class="bgFX"></div>
 
   <!-- Topbar -->
   <header class="topbar">
     <div class="wrap topbarInner">
       <div class="brand" id="goHome" role="button" tabindex="0">
-        <div class="logo">F90</div>
+        <div class="logoWrap" aria-hidden="true">
+          <div class="logo">F90</div>
+          <div class="headphones"></div>
+        </div>
         <div class="brandTxt">
           <div class="brandTitle">اف تسعين للإنتاج الفني</div>
           <div class="brandSub">F90 Music — Official</div>
@@ -22,17 +27,30 @@
 
       <div class="topActions">
         <button class="btn pill mobileOnly" id="drawerBtn" type="button" aria-label="menu">☰</button>
+        <button class="btn pill" id="themeBtn" type="button" title="تغيير اللون">ألوان</button>
+        <button class="btn pill" id="motionBtn" type="button" title="تشغيل/إيقاف الحركة">حركة</button>
         <a class="btn primary" data-link="youtube" target="_blank" rel="noopener">قناة يوتيوب</a>
       </div>
     </div>
   </header>
 
+  <!-- Theme Panel -->
+  <div class="modalOverlay" id="themeOverlay"></div>
+  <section class="modal" id="themeModal" aria-label="الثيمات">
+    <div class="modalHead">
+      <div class="pill">الثيمات (7)</div>
+      <button class="btn pill" id="closeTheme" type="button">✕</button>
+    </div>
+    <div class="themeGrid" id="themeGrid"></div>
+    <div class="small modalHint">يتم حفظ اختيارك تلقائياً.</div>
+  </section>
+
   <!-- Drawer -->
   <div class="drawerOverlay" id="drawerOverlay"></div>
-  <aside class="drawer" id="drawer" aria-label="القائمة الجانبية">
+  <aside class="drawer" id="drawer">
     <div class="sideTop">
       <div class="pill">القائمة</div>
-      <button class="btn pill" id="closeDrawer" type="button" aria-label="إغلاق">✕</button>
+      <button class="btn pill" id="closeDrawer" type="button">✕</button>
     </div>
 
     <nav class="sideNav">
@@ -79,9 +97,7 @@
           <a class="btn" data-link="tiktok" target="_blank" rel="noopener">TikTok</a>
           <a class="btn" data-link="insta" target="_blank" rel="noopener">Instagram</a>
         </div>
-
         <div class="hr"></div>
-
         <div class="sideCardTitle">طلب أغنية</div>
         <div class="sideLinks">
           <a class="btn primary" data-link="whatsapp" target="_blank" rel="noopener">WhatsApp</a>
@@ -108,32 +124,74 @@
         </div>
       </div>
 
-      <!-- Hero -->
-      <section class="hero" id="hero">
-        <div class="heroInner">
-          <div class="pill">F90 • Music</div>
-          <h2 class="heroTitle">كل الأغاني تظهر تلقائياً</h2>
-          <p class="heroDesc">تصنيف منظم (راب / رومنسي-حزين-طربي) + صفحة لكل أغنية.</p>
+      <!-- زر رجوع داخل الصفحات (مش بالهوم) -->
+      <button class="backBtn" id="backBtnIndex" type="button" title="رجوع">⟵ رجوع</button>
 
-          <div class="heroBtns">
-            <button class="btn primary" data-navto="#/all" type="button">كل الأغاني</button>
-            <button class="btn" data-navto="#/rap" type="button">الراب</button>
-            <button class="btn" data-navto="#/sad" type="button">رومنسي/حزين/طربي</button>
-          </div>
+      <!-- Home (احترافي) -->
+      <section class="homePro" id="homePro">
+        <section class="heroPro">
+          <div class="heroGlow"></div>
+          <div class="heroProInner">
+            <div class="pill">F90 • Music</div>
+            <h2 class="heroTitle">أغاني F90 — تشغيل سريع وتصنيف منظم</h2>
+            <p class="heroDesc">راب • رومنسي • حزين • طربي — وكل جديد يظهر تلقائياً.</p>
 
-          <div class="heroStats">
-            <div class="stat">
-              <div class="statNum" id="totalTracks">—</div>
-              <div class="statLbl">عدد الأغاني</div>
+            <div class="heroBtns">
+              <button class="btn primary" data-navto="#/all" type="button">كل الأغاني</button>
+              <button class="btn" data-navto="#/rap" type="button">الراب</button>
+              <button class="btn" data-navto="#/sad" type="button">رومنسي/حزين/طربي</button>
             </div>
-            <div class="stat">
-              <div class="statNum" id="latestTrack">—</div>
-              <div class="statLbl">آخر إصدار</div>
-            </div>
-          </div>
 
-          <div class="small" id="homeStatus"></div>
-        </div>
+            <div class="heroStats">
+              <div class="stat">
+                <div class="statNum" id="totalTracks">—</div>
+                <div class="statLbl">عدد الأغاني</div>
+              </div>
+              <div class="stat">
+                <div class="statNum" id="latestTrack">—</div>
+                <div class="statLbl">آخر إصدار</div>
+              </div>
+              <div class="stat">
+                <div class="statNum" id="topRated">—</div>
+                <div class="statLbl">أعلى تقييم</div>
+              </div>
+            </div>
+
+            <div class="eqPro" aria-hidden="true">
+              <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+            </div>
+
+            <div class="small" id="homeStatus"></div>
+          </div>
+        </section>
+
+        <section class="sectionHead">
+          <h3>أحدث الإصدارات</h3>
+          <div class="small">آخر ما نزل على القوائم</div>
+        </section>
+        <section class="row" id="latestRow"></section>
+
+        <section class="sectionHead">
+          <h3>تصنيفات سريعة</h3>
+          <div class="small">ادخل للقسم مباشرة</div>
+        </section>
+        <section class="catGrid">
+          <button class="catCard" data-navto="#/rap" type="button">
+            <div class="catIcon">🎧</div>
+            <div class="catTitle">الراب</div>
+            <div class="small">إيقاع • فلو • طاقة</div>
+          </button>
+          <button class="catCard" data-navto="#/sad" type="button">
+            <div class="catIcon">🎼</div>
+            <div class="catTitle">رومنسي/حزين/طربي</div>
+            <div class="small">إحساس • صوت • لحن</div>
+          </button>
+          <button class="catCard" data-navto="#/all" type="button">
+            <div class="catIcon">🔥</div>
+            <div class="catTitle">كل الأغاني</div>
+            <div class="small">كل شيء بمكان واحد</div>
+          </button>
+        </section>
       </section>
 
       <!-- Toolbar -->
@@ -142,6 +200,7 @@
         <select class="select" id="sortSelect">
           <option value="date_desc">الأحدث</option>
           <option value="date_asc">الأقدم</option>
+          <option value="views_desc">الأعلى تقييماً</option>
           <option value="title_asc">A-Z</option>
         </select>
       </section>
@@ -169,6 +228,6 @@
     </div>
   </section>
 
-  <script src="app.js?v=1"></script>
+  <script src="app.js?v=2"></script>
 </body>
-</html>
+  </html>

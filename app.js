@@ -1,11 +1,11 @@
 "use strict";
 
 /* ========= إعداداتك ========= */
-const YT_API_KEY = "AIzaSyD3mvCx80XsvwrURRg2RwaD8HmOKqhYkek";
+const YT_API_KEY = "AIzaSyDlJd_YDoDlvYdE_uVRkStNVlHB9uDUqkA";
 
 const PLAYLISTS = {
-  rap: "PL2FIA-SoBgYtotc48ZfKSYagxMd3AMmVp",
-  sad: "PL2FIA-SoBgYvY4B-0IDWTtKriVGPb1qnx",
+  rap: "PLER5A-XFPVBhQe7mhYW9HPrvw6MIpJIWw",
+  f90: "PLER5A-XFPVBhCv-NbbP8SFZXOD1HWiA6C",
 };
 
 const LINKS = {
